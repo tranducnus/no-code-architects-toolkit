@@ -4,7 +4,18 @@ import requests
 from urllib.parse import urlparse, parse_qs
 
 def download_file(url, storage_path="/tmp/"):
-    # Parse the URL to extract the file ID from the query parameters
+    # Handle local file paths
+    if url.startswith('file://'):
+        local_path = url[7:]  # Remove 'file://' prefix
+        if os.path.exists(local_path):
+            return local_path
+        raise FileNotFoundError(f"Local file not found: {local_path}")
+        
+    # Handle local paths without protocol
+    if os.path.exists(url):
+        return url
+        
+    # For HTTP/HTTPS URLs, proceed with download
     parsed_url = urlparse(url)
     query_params = parse_qs(parsed_url.query)
     

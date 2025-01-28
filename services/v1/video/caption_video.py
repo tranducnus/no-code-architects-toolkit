@@ -85,9 +85,17 @@ def get_available_fonts():
     except ImportError:
         logger.error("matplotlib not installed. Install via 'pip install matplotlib'.")
         return []
+        
     # Add custom fonts directory
-    custom_fonts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'fonts')
-    font_list = fm.findSystemFonts(fontpaths=[custom_fonts_dir], fontext='ttf')
+    current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    custom_fonts_dir = os.path.join(current_dir, 'fonts')
+    system_fonts = ['/usr/share/fonts', '/usr/local/share/fonts']
+    font_paths = [custom_fonts_dir] + system_fonts
+    
+    font_list = []
+    for path in font_paths:
+        if os.path.exists(path):
+            font_list.extend(fm.findSystemFonts(fontpaths=[path], fontext='ttf'))
     font_names = set()
     for font in font_list:
         try:
@@ -669,13 +677,16 @@ def process_captioning_v1(video_url, captions, settings, replace, job_id, langua
         else:
             captions_content = None
 
-        # Download the video
+        # Handle video path/url
         try:
-            video_path = download_file(video_url, STORAGE_PATH)
-            logger.info(f"Job {job_id}: Video downloaded to {video_path}")
+            if os.path.exists(video_url):
+                video_path = video_url
+                logger.info(f"Job {job_id}: Using existing video at {video_path}")
+            else:
+                video_path = download_file(video_url, STORAGE_PATH)
+                logger.info(f"Job {job_id}: Video downloaded to {video_path}")
         except Exception as e:
-            logger.error(f"Job {job_id}: Video download error: {str(e)}")
-            # For non-font errors, do NOT include available_fonts
+            logger.error(f"Job {job_id}: Video access error: {str(e)}")
             return {"error": str(e)}
 
         # Get video resolution
