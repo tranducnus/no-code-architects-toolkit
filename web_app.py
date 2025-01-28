@@ -3,8 +3,7 @@ from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 import os
 import uuid
-import os
-from werkzeug.utils import secure_filename
+from services.v1.video.caption_video import process_captioning_v1
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
@@ -101,4 +100,7 @@ def process_video(job_id, video_path, form_data):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 3000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=False)
+    
+    # For production with gunicorn
+    # Run with: gunicorn -w 4 -b 0.0.0.0:3000 web_app:app
