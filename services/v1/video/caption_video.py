@@ -81,10 +81,13 @@ def get_available_fonts():
     """Get the list of available fonts on the system."""
     try:
         import matplotlib.font_manager as fm
+        import os
     except ImportError:
         logger.error("matplotlib not installed. Install via 'pip install matplotlib'.")
         return []
-    font_list = fm.findSystemFonts(fontpaths=None, fontext='ttf')
+    # Add custom fonts directory
+    custom_fonts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'fonts')
+    font_list = fm.findSystemFonts(fontpaths=[custom_fonts_dir], fontext='ttf')
     font_names = set()
     for font in font_list:
         try:
