@@ -47,10 +47,8 @@ def create_app():
 
             task_queue.task_done()
 
-    # Start multiple worker threads for parallel processing
-    worker_count = 4  # Adjust based on available resources
-    for _ in range(worker_count):
-        threading.Thread(target=process_queue, daemon=True).start()
+    # Start the queue processing in a separate thread
+    threading.Thread(target=process_queue, daemon=True).start()
 
     # Decorator to add tasks to the queue or bypass it
     def queue_task(bypass_queue=False):
