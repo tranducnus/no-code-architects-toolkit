@@ -9,6 +9,7 @@ async function checkStatus() {
         
         const data = await response.json();
         statusElem.textContent = `Status: ${data.status}`;
+        console.log('Current status:', data);  // Debug log
         
         if (data.status === 'completed') {
             resultElem.innerHTML = `
