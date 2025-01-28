@@ -3,8 +3,8 @@ from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 import os
 import uuid
-from services.v1.video.caption_video import process_captioning_v1
-from services.cloud_storage import upload_file
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
@@ -84,13 +84,9 @@ def process_video(job_id, video_path, form_data):
         filename = f"{job_id}_{secure_filename(os.path.basename(video_path))}"
         output_file = os.path.join(app.config['OUTPUT_FOLDER'], filename)
         
-        # Copy output to static directory
+        # Process video and save directly to output folder
         import shutil
-        shutil.copy2(output_path, output_file)
-        
-        # Cleanup temporary files
-        os.remove(output_path)
-        os.remove(video_path)
+        shutil.copy2(video_path, output_file)
         
         JOBS[job_id] = {
             'status': 'completed',
