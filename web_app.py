@@ -80,13 +80,13 @@ def process_video(job_id, video_path, form_data):
         if isinstance(output_path, dict) and 'error' in output_path:
             raise Exception(output_path['error'])
 
-        # Generate unique filename
-        filename = f"{job_id}_{secure_filename(os.path.basename(video_path))}"
-        output_file = os.path.join(app.config['OUTPUT_FOLDER'], filename)
+        # Get the output path and copy to static folder
+        output_filename = f"{job_id}_captioned.mp4"
+        static_output = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
         
-        # Process video and save directly to output folder
+        # Copy the processed file to static folder
         import shutil
-        shutil.copy2(video_path, output_file)
+        shutil.copy2(output_path, static_output)
         
         JOBS[job_id] = {
             'status': 'completed',
