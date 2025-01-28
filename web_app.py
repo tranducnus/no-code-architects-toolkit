@@ -88,14 +88,13 @@ def process_video(job_id, video_path, form_data):
         import shutil
         shutil.copy2(output_path, static_output)
         
-        output_filename = os.path.basename(output_path)
-        static_output = os.path.join(app.config['OUTPUT_FOLDER'], output_filename) 
+        output_filename = f"{job_id}_captioned.mp4"
+        static_output = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
         shutil.copy2(output_path, static_output)
         
         JOBS[job_id] = {
             'status': 'completed',
-            'download_url': f'/static/uploads/{output_filename}',
-            'url': f'/static/uploads/{filename}'
+            'url': f'/static/uploads/{output_filename}'
         }
 
     except Exception as e:
