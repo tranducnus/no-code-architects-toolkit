@@ -75,12 +75,15 @@ def process_video(job_id, video_path, form_data):
             }
             return
 
-        # Upload to cloud storage
-        cloud_url = upload_file(output_path)
+        # Store file locally
+        filename = os.path.basename(output_path)
+        static_path = os.path.join('static', 'uploads', filename)
+        os.makedirs(os.path.dirname(static_path), exist_ok=True)
+        os.rename(output_path, static_path)
         
         JOBS[job_id] = {
             'status': 'completed',
-            'url': cloud_url
+            'url': f'/static/uploads/{filename}'
         }
 
     except Exception as e:
