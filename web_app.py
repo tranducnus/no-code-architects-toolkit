@@ -68,8 +68,9 @@ def process_video(job_id, video_path, form_data):
 
         JOBS[job_id]['status'] = 'processing'
         
+        # For local files, use the file directly without download
         output_path = process_captioning_v1(
-            video_path,
+            f"file://{os.path.abspath(video_path)}",
             form_data.get('captions', ''),
             settings,
             [],  # replace rules
