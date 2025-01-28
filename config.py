@@ -5,9 +5,12 @@ API_KEY = os.environ.get('API_KEY')
 if not API_KEY:
     raise ValueError("API_KEY environment variable is not set")
 
-# GCP environment variables
-GCP_SA_CREDENTIALS = os.environ.get('GCP_SA_CREDENTIALS', '')
-GCP_BUCKET_NAME = os.environ.get('GCP_BUCKET_NAME', '')
+# GCP environment variables (optional)
+GCP_SA_CREDENTIALS = os.environ.get('GCP_SA_CREDENTIALS')
+GCP_BUCKET_NAME = os.environ.get('GCP_BUCKET_NAME')
+
+# Initialize storage configuration
+STORAGE_ENABLED = bool(GCP_SA_CREDENTIALS and GCP_BUCKET_NAME)
 
 # S3 (DigitalOcean Spaces) environment variables
 S3_ENDPOINT_URL = os.environ.get('S3_ENDPOINT_URL', '')
