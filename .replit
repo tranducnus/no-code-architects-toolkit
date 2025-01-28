@@ -6,15 +6,3 @@ channel = "stable-24_05"
 
 [deployment]
 run = ["sh", "-c", "Test"]
-deploymentTarget = "cloudrun"
-
-[workflows]
-runButton = "Run"
-
-[[workflows.workflow]]
-name = "Run"
-author = 38548515
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python web_app.py"
