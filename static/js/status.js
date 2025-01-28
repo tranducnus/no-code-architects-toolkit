@@ -1,28 +1,43 @@
 
 async function checkStatus() {
+    const statusElem = document.getElementById('currentStatus');
+    const resultElem = document.getElementById('result');
+    
     try {
         const response = await fetch(`/status/${jobId}`);
-        const data = await response.json();
+        if (!response.ok) throw new Error('Failed to fetch status');
         
-        document.getElementById('currentStatus').textContent = data.status;
+        const data = await response.json();
+        statusElem.textContent = `Status: ${data.status}`;
         
         if (data.status === 'completed') {
-            document.getElementById('result').innerHTML = `
+            resultElem.innerHTML = `
+                <div class="success-message">Processing completed!</div>
                 <video width="100%" controls>
                     <source src="${data.url}" type="video/mp4">
                     Your browser does not support the video tag.
-                </video>`;
+                </video>
+                <a href="${data.url}" download class="download-button">Download Video</a>`;
             return;
         }
         
         if (data.status === 'failed') {
-            document.getElementById('result').textContent = 'Processing failed: ' + data.error;
+            resultElem.innerHTML = `
+                <div class="error-message">
+                    Processing failed: ${data.error}
+                    <br><a href="/" class="retry-button">Try Again</a>
+                </div>`;
             return;
         }
         
         setTimeout(checkStatus, 2000);
     } catch (error) {
-        document.getElementById('currentStatus').textContent = 'Error checking status: ' + error.message;
+        statusElem.textContent = 'Error checking status';
+        resultElem.innerHTML = `
+            <div class="error-message">
+                ${error.message}
+                <br><a href="/" class="retry-button">Try Again</a>
+            </div>`;
     }
 }
 

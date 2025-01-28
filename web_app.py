@@ -8,7 +8,9 @@ from services.cloud_storage import upload_file
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
+app.config['OUTPUT_FOLDER'] = os.path.join('static', 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
 
 JOBS = {}
 
@@ -54,12 +56,17 @@ def status(job_id):
 
 def process_video(job_id, video_path, form_data):
     try:
+        if not os.path.exists(video_path):
+            raise FileNotFoundError("Upload file not found")
+
         settings = {
             'font_family': form_data.get('font_family', 'Arial'),
             'font_size': int(form_data.get('font_size', 24)),
             'style': form_data.get('style', 'classic')
         }
 
+        JOBS[job_id]['status'] = 'processing'
+        
         output_path = process_captioning_v1(
             video_path,
             form_data.get('captions', ''),
@@ -69,17 +76,19 @@ def process_video(job_id, video_path, form_data):
         )
 
         if isinstance(output_path, dict) and 'error' in output_path:
-            JOBS[job_id] = {
-                'status': 'failed',
-                'error': output_path['error']
-            }
-            return
+            raise Exception(output_path['error'])
 
-        # Store file locally
-        filename = os.path.basename(output_path)
-        static_path = os.path.join('static', 'uploads', filename)
-        os.makedirs(os.path.dirname(static_path), exist_ok=True)
-        os.rename(output_path, static_path)
+        # Generate unique filename
+        filename = f"{job_id}_{secure_filename(os.path.basename(video_path))}"
+        output_file = os.path.join(app.config['OUTPUT_FOLDER'], filename)
+        
+        # Copy output to static directory
+        import shutil
+        shutil.copy2(output_path, output_file)
+        
+        # Cleanup temporary files
+        os.remove(output_path)
+        os.remove(video_path)
         
         JOBS[job_id] = {
             'status': 'completed',
