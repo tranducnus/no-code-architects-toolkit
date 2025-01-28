@@ -5,7 +5,8 @@ run = "Test"
 channel = "stable-24_05"
 
 [deployment]
-run = ["sh", "-c", "Test"]
+deploymentTarget = "static"
+publicDir = "3012"
 
 [workflows]
 runButton = "Run"
@@ -17,3 +18,7 @@ author = 38548515
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python web_app.py"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
