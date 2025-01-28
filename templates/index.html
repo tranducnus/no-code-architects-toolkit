@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Captioning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Video Captioning Service</h1>
+        <form id="uploadForm">
+            <div class="form-group">
+                <label>Video File:</label>
+                <input type="file" name="video" accept="video/*" required>
+            </div>
+            <div class="form-group">
+                <label>Caption Text:</label>
+                <textarea name="captions" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Font Family:</label>
+                <select name="font_family">
+                    <option value="Arial">Arial</option>
+                    <option value="ComicNeue">Comic Neue</option>
+                    <option value="DejaVuSans">DejaVu Sans</option>
+                    <option value="Roboto">Roboto</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Font Size:</label>
+                <input type="number" name="font_size" value="24">
+            </div>
+            <div class="form-group">
+                <label>Style:</label>
+                <select name="style">
+                    <option value="classic">Classic</option>
+                    <option value="karaoke">Karaoke</option>
+                    <option value="highlight">Highlight</option>
+                    <option value="underline">Underline</option>
+                    <option value="word_by_word">Word by Word</option>
+                </select>
+            </div>
+            <button type="submit">Process Video</button>
+        </form>
+        <div id="status"></div>
+    </div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

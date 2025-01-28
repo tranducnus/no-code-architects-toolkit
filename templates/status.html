@@ -1,0 +1,23 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Processing Status</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Processing Status</h1>
+        <div id="statusMessage">
+            Job ID: {{ job_id }}
+            <div id="currentStatus">Checking status...</div>
+        </div>
+        <div id="result"></div>
+        <a href="/" class="button">Back to Upload</a>
+    </div>
+    <script>
+        const jobId = "{{ job_id }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/status.js') }}"></script>
+</body>
+</html>
