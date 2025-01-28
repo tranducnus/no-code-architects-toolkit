@@ -21,7 +21,9 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload():
     try:
+        print("Received upload request")
         if 'video' not in request.files:
+            print("No video file in request")
             return jsonify({'error': 'No video file provided'}), 400
             
         video = request.files['video']
