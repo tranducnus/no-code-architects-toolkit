@@ -1,6 +1,8 @@
+
 async function checkStatus() {
     const statusElem = document.getElementById('currentStatus');
     const resultElem = document.getElementById('result');
+    const loadingContainer = document.querySelector('.loading-container');
 
     try {
         const response = await fetch(`/status/${jobId}`);
@@ -8,20 +10,24 @@ async function checkStatus() {
 
         const data = await response.json();
         statusElem.textContent = `Status: ${data.status}`;
-        console.log('Current status:', data);  // Debug log
+        console.log('Current status:', data);
 
         if (data.status === 'completed') {
+            loadingContainer.style.display = 'none';
             resultElem.innerHTML = `
                 <div class="success-message">Processing completed!</div>
-                <video width="100%" controls>
-                    <source src="${data.url}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
+                <div class="video-container">
+                    <video controls>
+                        <source src="${data.url}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
                 <a href="${data.url}" download class="download-button">Download Video</a>`;
             return;
         }
 
         if (data.status === 'failed') {
+            loadingContainer.style.display = 'none';
             resultElem.innerHTML = `
                 <div class="error-message">
                     Processing failed: ${data.error}
@@ -32,6 +38,7 @@ async function checkStatus() {
 
         setTimeout(checkStatus, 2000);
     } catch (error) {
+        loadingContainer.style.display = 'none';
         statusElem.textContent = 'Error checking status';
         resultElem.innerHTML = `
             <div class="error-message">
