@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 import os
@@ -24,7 +23,7 @@ def upload():
         if 'video' not in request.files:
             print("No video file in request")
             return jsonify({'error': 'No video file provided'}), 400
-            
+
         video = request.files['video']
         if video.filename == '':
             return jsonify({'error': 'No selected file'}), 400
@@ -67,7 +66,7 @@ def process_video(job_id, video_path, form_data):
         }
 
         JOBS[job_id]['status'] = 'processing'
-        
+
         # Pass the local path directly
         output_path = process_captioning_v1(
             video_path,
@@ -83,19 +82,17 @@ def process_video(job_id, video_path, form_data):
         # Get the output path and copy to static folder
         output_filename = f"{job_id}_captioned.mp4"
         static_output = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-        
+
         # Copy the processed file to static folder
         import shutil
         shutil.copy2(output_path, static_output)
-        
-        output_filename = f"{job_id}_captioned.mp4"
-        static_output = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-        shutil.copy2(output_path, static_output)
-        
+
+
         JOBS[job_id] = {
             'status': 'completed',
             'url': f'/static/uploads/{output_filename}'
         }
+        print(f"Job {job_id} completed. Status updated in JOBS dictionary.")
 
     except Exception as e:
         JOBS[job_id] = {
@@ -106,6 +103,6 @@ def process_video(job_id, video_path, form_data):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=port, debug=False)
-    
+
     # For production with gunicorn
     # Run with: gunicorn -w 4 -b 0.0.0.0:3000 web_app:app
