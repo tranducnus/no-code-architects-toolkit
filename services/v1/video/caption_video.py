@@ -754,7 +754,15 @@ def process_captioning_v1(video_url, captions, settings, replace, job_id, langua
             ffmpeg.input(video_path).output(
                 output_path,
                 vf=f"subtitles='{subtitle_path}'",
-                acodec='copy'
+                acodec='copy',
+                vcodec='h264',
+                **{
+                    'c:v': 'h264',
+                    'preset': 'faster',
+                    'crf': '23',
+                    'threads': '4',
+                    'movflags': '+faststart'
+                }
             ).run(overwrite_output=True)
             logger.info(f"Job {job_id}: FFmpeg processing completed. Output saved to {output_path}")
         except ffmpeg.Error as e:
