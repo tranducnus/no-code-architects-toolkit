@@ -18,6 +18,24 @@ def index():
     processed_videos = [f for f in os.listdir(app.config['PROCESSED_FOLDER']) if f.endswith('.mp4')]
     return render_template('index.html', uploaded_videos=uploaded_videos, processed_videos=processed_videos)
 
+@app.route('/upload_only', methods=['POST'])
+def upload_only():
+    if 'video' not in request.files:
+        return jsonify({'error': 'No video file uploaded'}), 400
+        
+    video = request.files['video']
+    if video.filename == '':
+        return jsonify({'error': 'No video selected'}), 400
+        
+    filename = secure_filename(video.filename)
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    video.save(filepath)
+    
+    return jsonify({
+        'success': True,
+        'video_path': filename
+    })
+
 @app.route('/upload', methods=['POST'])
 def upload():
     try:

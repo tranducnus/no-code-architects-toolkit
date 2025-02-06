@@ -3,10 +3,53 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const uploadProgress = document.getElementById('uploadProgress');
+    const errorMessage = document.getElementById('errorMessage');
+    const uploadProgressBar = uploadProgress.querySelector('.progress-bar-fill');
+    
+    // Reset UI
+    uploadProgress.style.display = 'none';
+    errorMessage.textContent = '';
+    
+    const formData = new FormData(e.target);
+    
+    try {
+        uploadProgress.style.display = 'block';
+        let progress = 0;
+        const uploadInterval = setInterval(() => {
+            progress += 5;
+            if (progress <= 100) {
+                uploadProgressBar.style.width = `${progress}%`;
+            }
+        }, 200);
+
+        const response = await fetch('/upload_only', {
+            method: 'POST',
+            body: formData
+        });
+        
+        clearInterval(uploadInterval);
+        uploadProgressBar.style.width = '100%';
+        
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('video_path').value = data.video_path;
+            document.querySelector('.upload-section').style.display = 'none';
+            document.querySelector('.caption-section').style.display = 'block';
+        } else {
+            throw new Error(data.error || 'Upload failed');
+        }
+    } catch (error) {
+        uploadProgress.style.display = 'none';
+        errorMessage.textContent = `Error: ${error.message}`;
+    }
+});
+
+document.getElementById('captionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
     const processingProgress = document.getElementById('processingProgress');
     const videoResult = document.getElementById('videoResult');
     const errorMessage = document.getElementById('errorMessage');
-    const uploadProgressBar = uploadProgress.querySelector('.progress-bar-fill');
     const processingProgressBar = processingProgress.querySelector('.progress-bar-fill');
     
     // Reset UI
