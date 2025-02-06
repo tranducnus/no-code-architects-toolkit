@@ -80,8 +80,9 @@ async function checkStatus(jobId, progressBar) {
                 const previewVideo = document.getElementById('previewVideo');
                 const downloadButton = document.getElementById('downloadButton');
                 
-                previewVideo.src = data.url;
-                downloadButton.onclick = () => window.location.href = data.url;
+                const processedPath = data.url.replace('/static/uploads/', '/static/processed/');
+                previewVideo.src = processedPath;
+                downloadButton.onclick = () => window.location.href = processedPath;
                 
                 document.getElementById('processingProgress').style.display = 'none';
                 videoResult.style.display = 'block';

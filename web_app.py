@@ -5,18 +5,18 @@ import uuid
 from services.v1.video.caption_video import process_captioning_v1
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
-app.config['OUTPUT_FOLDER'] = os.path.join('static', 'uploads')
+app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploaded')
+app.config['PROCESSED_FOLDER'] = os.path.join('static', 'processed')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
+os.makedirs(app.config['PROCESSED_FOLDER'], exist_ok=True)
 
 JOBS = {}
 
 @app.route('/')
 def index():
-    uploads_dir = os.path.join('static', 'uploads')
-    videos = [f for f in os.listdir(uploads_dir) if f.endswith('.mp4')]
-    return render_template('index.html', videos=videos)
+    uploaded_videos = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if f.endswith('.mp4')]
+    processed_videos = [f for f in os.listdir(app.config['PROCESSED_FOLDER']) if f.endswith('.mp4')]
+    return render_template('index.html', uploaded_videos=uploaded_videos, processed_videos=processed_videos)
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -83,7 +83,7 @@ def process_video(job_id, video_path, form_data):
 
         # Get the output path and copy to static folder
         output_filename = f"{job_id}_captioned.mp4"
-        static_output = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+        static_output = os.path.join(app.config['PROCESSED_FOLDER'], output_filename)
 
         # Copy the processed file to static folder
         import shutil

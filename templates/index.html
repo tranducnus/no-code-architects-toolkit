@@ -10,15 +10,29 @@
         <h1>Video Captioning Service</h1>
         
         <div class="existing-videos">
-            <h2>Available Videos</h2>
+            <h2>Uploaded Videos</h2>
             <div class="video-grid">
-                {% for video in videos %}
+                {% for video in uploaded_videos %}
                 <div class="video-item">
                     <video width="320" height="240" controls>
-                        <source src="{{ url_for('static', filename='uploads/' + video) }}" type="video/mp4">
+                        <source src="{{ url_for('static', filename='uploaded/' + video) }}" type="video/mp4">
                     </video>
                     <div class="video-controls">
                         <button class="select-video" data-filename="{{ video }}">Select</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <h2>Processed Videos</h2>
+            <div class="video-grid">
+                {% for video in processed_videos %}
+                <div class="video-item">
+                    <video width="320" height="240" controls>
+                        <source src="{{ url_for('static', filename='processed/' + video) }}" type="video/mp4">
+                    </video>
+                    <div class="video-controls">
+                        <button class="download-video" data-filename="{{ video }}">Download</button>
                     </div>
                 </div>
                 {% endfor %}
