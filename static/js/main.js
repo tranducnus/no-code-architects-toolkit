@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
+// Handle video upload
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -24,6 +25,7 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     // Reset UI
     uploadProgress.style.display = 'none';
     errorMessage.textContent = '';
+    document.querySelector('.caption-section').style.display = 'none';
     
     const formData = new FormData(e.target);
     
@@ -47,8 +49,32 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         
         const data = await response.json();
         if (data.success) {
-            // Refresh the page to show new upload
-            window.location.reload();
+            // Add the new video to the grid without page reload
+            const uploadedVideosGrid = document.querySelector('.video-grid');
+            const newVideoItem = document.createElement('div');
+            newVideoItem.classList.add('video-item');
+            newVideoItem.innerHTML = `
+                <video width="320" height="240" controls>
+                    <source src="/static/uploaded/${data.filename}" type="video/mp4">
+                </video>
+                <div class="video-controls">
+                    <button class="select-video" data-filename="${data.filename}">Select for Processing</button>
+                </div>
+            `;
+            uploadedVideosGrid.appendChild(newVideoItem);
+            
+            // Add event listener to the new select button
+            const newSelectButton = newVideoItem.querySelector('.select-video');
+            newSelectButton.addEventListener('click', function() {
+                document.getElementById('video_path').value = this.dataset.filename;
+                document.querySelector('.upload-section').style.display = 'none';
+                document.querySelector('.caption-section').style.display = 'block';
+            });
+            
+            // Reset form and progress
+            e.target.reset();
+            uploadProgress.style.display = 'none';
+            uploadProgressBar.style.width = '0%';
         } else {
             throw new Error(data.error || 'Upload failed');
         }
@@ -58,6 +84,7 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     }
 });
 
+// Handle caption processing
 document.getElementById('captionForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -67,7 +94,6 @@ document.getElementById('captionForm').addEventListener('submit', async (e) => {
     const processingProgressBar = processingProgress.querySelector('.progress-bar-fill');
     
     // Reset UI
-    uploadProgress.style.display = 'none';
     processingProgress.style.display = 'none';
     videoResult.style.display = 'none';
     errorMessage.textContent = '';
@@ -75,15 +101,13 @@ document.getElementById('captionForm').addEventListener('submit', async (e) => {
     const formData = new FormData(e.target);
     
     try {
-        // Show upload progress
-        uploadProgress.style.display = 'block';
-        
-        // Simulate upload progress
+        // Show processing progress
+        processingProgress.style.display = 'block';
         let progress = 0;
-        const uploadInterval = setInterval(() => {
-            progress += 5;
+        const processingInterval = setInterval(() => {
+            progress += 2;
             if (progress <= 100) {
-                uploadProgressBar.style.width = `${progress}%`;
+                processingProgressBar.style.width = `${progress}%`;
             }
         }, 200);
         
