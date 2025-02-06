@@ -50,6 +50,31 @@
                 </div>
 
                 <div class="editor-section">
+                    <h3>Position</h3>
+                    <select id="position" class="style-input" onchange="updateCaptionPreview()">
+                        <option value="bottom_center">Bottom</option>
+                        <option value="middle_center">Middle</option>
+                        <option value="top_center">Top</option>
+                    </select>
+                </div>
+
+                <div class="editor-section">
+                    <h3>Alignment</h3>
+                    <select id="alignment" class="style-input" onchange="updateCaptionPreview()">
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                    </select>
+                </div>
+
+                <div class="editor-section">
+                    <h3>Timing Adjustment</h3>
+                    <div id="timingControls" class="timing-controls">
+                        <!-- Timing controls will be populated dynamically -->
+                    </div>
+                </div>
+
+                <div class="editor-section">
                     <h3>Caption Text</h3>
                     <textarea id="captionText" class="style-input" rows="4" placeholder="Enter your captions here..."></textarea>
                 </div>

@@ -73,8 +73,31 @@ document.addEventListener('DOMContentLoaded', function() {
             captionPreview.style.fontSize = `${fontSize.value}px`;
             captionPreview.style.color = textColor.value;
             captionPreview.style.backgroundColor = bgColor.value;
+            captionPreview.style.textAlign = document.getElementById('alignment').value;
+            captionPreview.style.position = 'relative';
             captionPreview.textContent = captionText.value;
+            
+            // Update position
+            const position = document.getElementById('position').value;
+            const positions = {
+                'top': '0',
+                'middle': '50%',
+                'bottom': '100%'
+            };
+            captionPreview.style.top = positions[position.split('_')[0]];
         }
+    }
+
+    // Handle transcript timing adjustments
+    let transcriptTiming = {};
+    
+    function adjustTiming(index, adjustment) {
+        if (!transcriptTiming[index]) {
+            transcriptTiming[index] = 0;
+        }
+        transcriptTiming[index] += adjustment;
+        document.getElementById(`timing-${index}`).textContent = 
+            `${transcriptTiming[index] > 0 ? '+' : ''}${transcriptTiming[index]}s`;
     }
 
     // Event listeners for style changes

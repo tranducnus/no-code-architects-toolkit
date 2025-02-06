@@ -86,7 +86,11 @@ def process_video(job_id, video_path, form_data):
         settings = {
             'font_family': form_data.get('font_family', 'Arial'),
             'font_size': int(form_data.get('font_size', 24)),
-            'style': form_data.get('style', 'classic')
+            'style': form_data.get('style', 'classic'),
+            'line_color': form_data.get('textColor', '#FFFFFF'),
+            'background_color': form_data.get('bgColor', '#000000'),
+            'position': form_data.get('position', 'bottom_center'),
+            'alignment': form_data.get('alignment', 'center'),
         }
 
         JOBS[job_id]['status'] = 'processing'
