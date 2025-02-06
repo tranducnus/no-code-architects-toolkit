@@ -99,6 +99,12 @@ document.getElementById('captionForm').addEventListener('submit', async (e) => {
     errorMessage.textContent = '';
     
     const formData = new FormData(e.target);
+    const selectedVideo = document.getElementById('video_path').value;
+    if (!selectedVideo) {
+        errorMessage.textContent = 'Please select a video first';
+        return;
+    }
+    formData.append('video', selectedVideo);
     
     try {
         // Show processing progress

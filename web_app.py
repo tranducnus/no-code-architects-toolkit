@@ -22,15 +22,15 @@ def index():
 def upload_only():
     if 'video' not in request.files:
         return jsonify({'error': 'No video file uploaded'}), 400
-        
+
     video = request.files['video']
     if video.filename == '':
         return jsonify({'error': 'No video selected'}), 400
-        
+
     filename = secure_filename(video.filename)
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     video.save(filepath)
-    
+
     return jsonify({
         'success': True,
         'video_path': filename
@@ -40,18 +40,22 @@ def upload_only():
 def upload():
     try:
         print("Received upload request")
-        if 'video' not in request.files:
-            print("No video file in request")
+        video_path = None
+        if 'video' in request.files:
+            video = request.files['video']
+            if video.filename != '':
+                filename = secure_filename(video.filename)
+                video_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                video.save(video_path)
+        elif 'video' in request.form:
+            video_path = os.path.join(app.config['UPLOAD_FOLDER'], request.form['video'])
+            if not os.path.exists(video_path):
+                return jsonify({'error': 'Selected video not found'}), 400
+
+        if not video_path:
             return jsonify({'error': 'No video file provided'}), 400
 
-        video = request.files['video']
-        if video.filename == '':
-            return jsonify({'error': 'No selected file'}), 400
-
         job_id = str(uuid.uuid4())
-        filename = secure_filename(video.filename)
-        video_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        video.save(video_path)
 
         JOBS[job_id] = {
             'status': 'processing',
