@@ -40,7 +40,8 @@ def upload():
 
 @app.route('/preview')
 def preview():
-    uploads_dir = os.path.join('static', 'uploads')
+    uploads_dir = os.path.join('static', 'uploads') 
+    os.makedirs(uploads_dir, exist_ok=True)
     videos = []
     for filename in os.listdir(uploads_dir):
         if filename.endswith('.mp4'):
@@ -49,6 +50,24 @@ def preview():
                             if f.startswith(base_name) and 'captioned' in f), None)
             videos.append({'filename': filename, 'processed': processed})
     return render_template('preview.html', videos=videos)
+
+@app.route('/process', methods=['POST'])
+def process_video():
+    video_file = request.form.get('video_file')
+    if not video_file:
+        return jsonify({'error': 'No video file specified'}), 400
+        
+    video_path = os.path.join(app.config['OUTPUT_FOLDER'], video_file)
+    if not os.path.exists(video_path):
+        return jsonify({'error': 'Video file not found'}), 404
+
+    job_id = str(uuid.uuid4())
+    JOBS[job_id] = {'status': 'processing', 'video_path': video_path}
+    
+    thread = threading.Thread(target=process_video, args=(job_id, video_path, {}))
+    thread.start()
+    
+    return redirect(url_for('preview'))
 
         }
 
