@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Preview</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Available Videos</h1>
+        <div class="video-list">
+            {% for video in videos %}
+            <div class="video-item">
+                <h3>{{ video.filename }}</h3>
+                <video width="320" height="240" controls>
+                    <source src="{{ url_for('static', filename='uploads/' + video.filename) }}" type="video/mp4">
+                </video>
+                <form action="/process" method="POST">
+                    <input type="hidden" name="video_file" value="{{ video.filename }}">
+                    <button type="submit">Process Video</button>
+                </form>
+                {% if video.processed %}
+                <a href="{{ url_for('static', filename='uploads/' + video.processed) }}" 
+                   class="download-button" download>Download Processed</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <a href="/" class="button">Upload New Video</a>
+    </div>
+</body>
+</html>

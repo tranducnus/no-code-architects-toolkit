@@ -13,7 +13,11 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         
         const data = await response.json();
         if (data.job_id) {
-            window.location.href = `/status/${data.job_id}`;
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                window.location.href = `/status/${data.job_id}`;
+            }
         } else {
             document.getElementById('status').textContent = 'Error: ' + data.error;
         }

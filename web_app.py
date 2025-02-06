@@ -37,6 +37,19 @@ def upload():
         JOBS[job_id] = {
             'status': 'processing',
             'video_path': video_path
+
+@app.route('/preview')
+def preview():
+    uploads_dir = os.path.join('static', 'uploads')
+    videos = []
+    for filename in os.listdir(uploads_dir):
+        if filename.endswith('.mp4'):
+            base_name = filename.rsplit('_', 1)[0]
+            processed = next((f for f in os.listdir(uploads_dir) 
+                            if f.startswith(base_name) and 'captioned' in f), None)
+            videos.append({'filename': filename, 'processed': processed})
+    return render_template('preview.html', videos=videos)
+
         }
 
         # Process in background thread
@@ -44,7 +57,7 @@ def upload():
         thread = threading.Thread(target=process_video, args=(job_id, video_path, request.form))
         thread.start()
 
-        return jsonify({'job_id': job_id})
+        return jsonify({'job_id': job_id, 'redirect': '/preview'})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
