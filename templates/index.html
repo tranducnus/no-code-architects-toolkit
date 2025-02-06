@@ -66,9 +66,18 @@
                 <div id="uploadSection">
                     <h2>Upload Video</h2>
                     <form id="uploadForm">
-                        <input type="file" name="video" accept="video/*" required>
-                        <button type="submit">Upload</button>
+                        <input type="file" name="video" accept="video/*">
+                        <button type="submit">Upload New Video</button>
                     </form>
+                    
+                    <h3>Or Select Existing Video</h3>
+                    <select id="existingVideos" class="style-input">
+                        <option value="">Select a video</option>
+                        {% for video in uploaded_videos %}
+                            <option value="{{ video }}">{{ video }}</option>
+                        {% endfor %}
+                    </select>
+                    <button id="selectExisting" class="primary-button">Use Selected Video</button>
                 </div>
 
                 <div id="previewContainer" style="display: none;">

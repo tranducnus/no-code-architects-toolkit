@@ -16,6 +16,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const captionText = document.getElementById('captionText');
     const processVideo = document.getElementById('processVideo');
 
+    // Handle existing video selection
+    const existingVideos = document.getElementById('existingVideos');
+    const selectExisting = document.getElementById('selectExisting');
+    
+    if (selectExisting) {
+        selectExisting.addEventListener('click', () => {
+            const selectedVideo = existingVideos.value;
+            if (selectedVideo) {
+                uploadSection.style.display = 'none';
+                previewContainer.style.display = 'block';
+                videoPreview.src = `/static/uploaded/${selectedVideo}`;
+                document.getElementById('video_path').value = selectedVideo;
+            } else {
+                errorMessage.textContent = 'Please select a video';
+            }
+        });
+    }
+
     // Handle file upload
     if (uploadForm) {
         uploadForm.addEventListener('submit', async (e) => {
