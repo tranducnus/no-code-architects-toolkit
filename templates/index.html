@@ -9,70 +9,48 @@
     <div class="container">
         <h1>Video Captioning Service</h1>
         
-        <div class="existing-videos">
-            <h2>Uploaded Videos</h2>
-            <div class="video-grid">
-                {% for video in uploaded_videos %}
-                <div class="video-item">
-                    <video width="320" height="240" controls>
-                        <source src="{{ url_for('static', filename='uploaded/' + video) }}" type="video/mp4">
-                    </video>
-                    <div class="video-controls">
-                        <button class="select-video" data-filename="{{ video }}">Select</button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            
-            <h2>Processed Videos</h2>
-            <div class="video-grid">
-                {% for video in processed_videos %}
-                <div class="video-item">
-                    <video width="320" height="240" controls>
-                        <source src="{{ url_for('static', filename='processed/' + video) }}" type="video/mp4">
-                    </video>
-                    <div class="video-controls">
-                        <button class="download-video" data-filename="{{ video }}">Download</button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
         <div class="upload-section">
+            <h2>1. Upload Video</h2>
             <form id="uploadForm">
                 <div class="form-group">
-                    <label>Select Video:</label>
                     <input type="file" name="video" accept="video/*" required>
                 </div>
-                <div class="form-group">
-                    <label>Caption Text:</label>
-                    <textarea name="captions" rows="4"></textarea>
+
+                <div class="style-section">
+                    <h2>2. Select Style</h2>
+                    <div class="form-group">
+                        <label>Font Family:</label>
+                        <select name="font_family">
+                            <option value="Arial">Arial</option>
+                            <option value="ComicNeue">Comic Neue</option>
+                            <option value="DejaVuSans">DejaVu Sans</option>
+                            <option value="Roboto">Roboto</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Font Size:</label>
+                        <input type="number" name="font_size" value="24">
+                    </div>
+                    <div class="form-group">
+                        <label>Caption Style:</label>
+                        <select name="style">
+                            <option value="classic">Classic</option>
+                            <option value="karaoke">Karaoke</option>
+                            <option value="highlight">Highlight</option>
+                            <option value="underline">Underline</option>
+                            <option value="word_by_word">Word by Word</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Caption Text:</label>
+                        <textarea name="captions" rows="4"></textarea>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Font Family:</label>
-                    <select name="font_family">
-                        <option value="Arial">Arial</option>
-                        <option value="ComicNeue">Comic Neue</option>
-                        <option value="DejaVuSans">DejaVu Sans</option>
-                        <option value="Roboto">Roboto</option>
-                    </select>
+
+                <div class="process-section">
+                    <h2>3. Process Video</h2>
+                    <button type="submit">Process Video</button>
                 </div>
-                <div class="form-group">
-                    <label>Font Size:</label>
-                    <input type="number" name="font_size" value="24">
-                </div>
-                <div class="form-group">
-                    <label>Style:</label>
-                    <select name="style">
-                        <option value="classic">Classic</option>
-                        <option value="karaoke">Karaoke</option>
-                        <option value="highlight">Highlight</option>
-                        <option value="underline">Underline</option>
-                        <option value="word_by_word">Word by Word</option>
-                    </select>
-                </div>
-                <button type="submit">Process Video</button>
             </form>
         </div>
 
@@ -95,6 +73,22 @@
         <div id="videoResult" class="video-section" style="display: none;">
             <video id="previewVideo" class="video-preview" controls></video>
             <button id="downloadButton" class="download-button">Download Video</button>
+        </div>
+
+        <div class="processed-videos">
+            <h2>4. Processed Videos</h2>
+            <div class="video-grid">
+                {% for video in processed_videos %}
+                <div class="video-item">
+                    <video width="320" height="240" controls>
+                        <source src="{{ url_for('static', filename='processed/' + video) }}" type="video/mp4">
+                    </video>
+                    <div class="video-controls">
+                        <button class="download-video" data-filename="{{ video }}">Download</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
 
         <div id="errorMessage" class="error-message"></div>

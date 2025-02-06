@@ -11,6 +11,24 @@
   padding: 20px;
 }
 
+.upload-section, .style-section, .process-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+h2 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+}
+
+.processed-videos {
+  margin-top: 40px;
+}
+
 h1 {
   color: #333;
   margin-bottom: 30px;
