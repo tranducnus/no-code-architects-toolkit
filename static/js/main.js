@@ -116,8 +116,8 @@ document.getElementById('captionForm').addEventListener('submit', async (e) => {
             body: formData
         });
         
-        clearInterval(uploadInterval);
-        uploadProgressBar.style.width = '100%';
+        clearInterval(processingInterval);
+        processingProgressBar.style.width = '100%';
         
         const data = await response.json();
         
