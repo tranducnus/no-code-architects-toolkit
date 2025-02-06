@@ -14,7 +14,9 @@ JOBS = {}
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    uploads_dir = os.path.join('static', 'uploads')
+    videos = [f for f in os.listdir(uploads_dir) if f.endswith('.mp4')]
+    return render_template('index.html', videos=videos)
 
 @app.route('/upload', methods=['POST'])
 def upload():
