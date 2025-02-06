@@ -1,4 +1,19 @@
 
+// Add event listeners for video selection
+document.addEventListener('DOMContentLoaded', function() {
+    const selectButtons = document.querySelectorAll('.select-video');
+    selectButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filename = this.dataset.filename;
+            document.getElementById('video_path').value = filename;
+            document.querySelector('.upload-section').style.display = 'none';
+            document.querySelector('.caption-section').style.display = 'block';
+        });
+    });
+});
+
+
+
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -32,9 +47,8 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         
         const data = await response.json();
         if (data.success) {
-            document.getElementById('video_path').value = data.video_path;
-            document.querySelector('.upload-section').style.display = 'none';
-            document.querySelector('.caption-section').style.display = 'block';
+            // Refresh the page to show new upload
+            window.location.reload();
         } else {
             throw new Error(data.error || 'Upload failed');
         }

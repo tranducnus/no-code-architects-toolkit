@@ -17,6 +17,22 @@
                 </div>
                 <button type="submit">Upload Video</button>
             </form>
+
+            <div class="uploaded-videos" style="margin-top: 20px;">
+                <h3>Uploaded Videos</h3>
+                <div class="video-grid">
+                    {% for video in uploaded_videos %}
+                    <div class="video-item">
+                        <video width="320" height="240" controls>
+                            <source src="{{ url_for('static', filename='uploaded/' + video) }}" type="video/mp4">
+                        </video>
+                        <div class="video-controls">
+                            <button class="select-video" data-filename="{{ video }}">Select for Processing</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
 
         <div class="caption-section" style="display: none;">
