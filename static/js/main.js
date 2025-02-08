@@ -1,10 +1,113 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const uploadForm = document.getElementById('uploadForm');
-    const previewContainer = document.getElementById('previewContainer');
-    const uploadSection = document.getElementById('uploadSection');
-    const videoPreview = document.getElementById('videoPreview');
-    const captionPreview = document.getElementById('captionPreview');
-    const errorMessage = document.getElementById('errorMessage');
+    const dropzone = document.getElementById('dropzone');
+    const videoInput = document.getElementById('videoInput');
+    const processButton = document.getElementById('processButton');
+    const processingProgress = document.getElementById('processingProgress');
+    let selectedVideo = null;
+
+    // Drag and drop functionality
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#3b82f6';
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = '#ddd';
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#ddd';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('video/')) {
+            handleFileUpload(file);
+        }
+    });
+
+    dropzone.addEventListener('click', () => {
+        videoInput.click();
+    });
+
+    videoInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileUpload(e.target.files[0]);
+        }
+    });
+
+    // Handle existing video selection
+    document.querySelectorAll('.video-card').forEach(card => {
+        card.querySelector('.select-btn')?.addEventListener('click', () => {
+            const videoName = card.dataset.video;
+            selectVideo(videoName, card);
+        });
+    });
+
+    async function handleFileUpload(file) {
+        const formData = new FormData();
+        formData.append('video', file);
+
+        try {
+            const response = await fetch('/upload_only', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                location.reload(); // Refresh to show new video
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Upload failed: ' + error.message);
+        }
+    }
+
+    function selectVideo(videoName, card) {
+        document.querySelectorAll('.video-card').forEach(c =>
+            c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedVideo = videoName;
+        processButton.disabled = false;
+    }
+
+    // Process video
+    processButton.addEventListener('click', async () => {
+        if (!selectedVideo) return;
+
+        processButton.disabled = true;
+        processingProgress.style.display = 'block';
+        const progressBar = processingProgress.querySelector('.progress-bar-fill');
+        let progress = 0;
+
+        try {
+            const formData = new FormData();
+            formData.append('video', selectedVideo);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                throw new Error(data.error || 'Processing failed');
+            }
+        } catch (error) {
+            console.error('Processing error:', error);
+            alert('Processing failed: ' + error.message);
+            processButton.disabled = false;
+            processingProgress.style.display = 'none';
+        }
+    });
+
 
     // Style inputs
     const fontFamily = document.getElementById('fontFamily');
@@ -14,60 +117,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const bgColor = document.getElementById('bgColor');
     const captionStyle = document.getElementById('captionStyle');
     const captionText = document.getElementById('captionText');
-    const processVideo = document.getElementById('processVideo');
+    const errorMessage = document.getElementById('errorMessage');
 
-    // Handle existing video selection
-    const existingVideos = document.getElementById('existingVideos');
-    const selectExisting = document.getElementById('selectExisting');
-    
-    if (selectExisting) {
-        selectExisting.addEventListener('click', () => {
-            const selectedVideo = existingVideos.value;
-            if (selectedVideo) {
-                uploadSection.style.display = 'none';
-                previewContainer.style.display = 'block';
-                videoPreview.src = `/static/uploaded/${selectedVideo}`;
-                document.getElementById('video_path').value = selectedVideo;
-            } else {
-                errorMessage.textContent = 'Please select a video';
-            }
-        });
-    }
-
-    // Handle file upload
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            errorMessage.textContent = '';
-
-            const formData = new FormData(e.target);
-
-            try {
-                const response = await fetch('/upload_only', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    uploadSection.style.display = 'none';
-                    previewContainer.style.display = 'block';
-                    if (videoPreview) {
-                        videoPreview.src = `/static/uploaded/${data.video_path}`;
-                        document.getElementById('video_path').value = data.video_path;
-                    }
-                } else {
-                    throw new Error(data.error || 'Upload failed');
-                }
-            } catch (error) {
-                errorMessage.textContent = `Error: ${error.message}`;
-            }
-        });
-    }
 
     // Live preview updates
     function updateCaptionPreview() {
+        const captionPreview = document.getElementById('captionPreview');
         if (captionPreview) {
             captionPreview.style.fontFamily = fontFamily.value;
             captionPreview.style.fontSize = `${fontSize.value}px`;
@@ -76,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
             captionPreview.style.textAlign = document.getElementById('alignment').value;
             captionPreview.style.position = 'relative';
             captionPreview.textContent = captionText.value;
-            
+
             // Update position
             const position = document.getElementById('position').value;
             const positions = {
@@ -86,18 +141,6 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             captionPreview.style.top = positions[position.split('_')[0]];
         }
-    }
-
-    // Handle transcript timing adjustments
-    let transcriptTiming = {};
-    
-    function adjustTiming(index, adjustment) {
-        if (!transcriptTiming[index]) {
-            transcriptTiming[index] = 0;
-        }
-        transcriptTiming[index] += adjustment;
-        document.getElementById(`timing-${index}`).textContent = 
-            `${transcriptTiming[index] > 0 ? '+' : ''}${transcriptTiming[index]}s`;
     }
 
     // Event listeners for style changes
@@ -112,55 +155,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (bgColor) bgColor.addEventListener('input', updateCaptionPreview);
     if (captionText) captionText.addEventListener('input', updateCaptionPreview);
 
-    // Process video with captions
-    if (processVideo) {
-        processVideo.addEventListener('click', async () => {
-            const videoPath = document.getElementById('video_path')?.value;
-            if (!videoPath) {
-                errorMessage.textContent = 'Please upload a video first';
-                return;
-            }
+    // Handle transcript timing adjustments (This part remains unchanged)
+    let transcriptTiming = {};
 
-            const processingProgress = document.getElementById('processingProgress');
-            const progressBar = processingProgress?.querySelector('.progress-bar-fill');
-
-            try {
-                processingProgress.style.display = 'block';
-                let progress = 0;
-                const processingInterval = setInterval(() => {
-                    progress += 2;
-                    if (progress <= 95 && progressBar) {
-                        progressBar.style.width = `${progress}%`;
-                    }
-                }, 500);
-
-                const formData = new FormData();
-                formData.append('video', videoPath);
-                formData.append('font_family', fontFamily.value);
-                formData.append('font_size', fontSize.value);
-                formData.append('text_color', textColor.value);
-                formData.append('bg_color', bgColor.value);
-                formData.append('style', captionStyle.value);
-                formData.append('captions', captionText.value);
-
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (data.job_id) {
-                    await checkStatus(data.job_id, progressBar);
-                } else {
-                    throw new Error(data.error || 'Processing failed');
-                }
-            } catch (error) {
-                if (processingProgress) processingProgress.style.display = 'none';
-                errorMessage.textContent = `Error: ${error.message}`;
-            }
-        });
+    function adjustTiming(index, adjustment) {
+        if (!transcriptTiming[index]) {
+            transcriptTiming[index] = 0;
+        }
+        transcriptTiming[index] += adjustment;
+        document.getElementById(`timing-${index}`).textContent =
+            `${transcriptTiming[index] > 0 ? '+' : ''}${transcriptTiming[index]}s`;
     }
+
 });
 
 async function checkStatus(jobId, progressBar) {

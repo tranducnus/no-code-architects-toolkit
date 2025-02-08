@@ -1,152 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Video Captioning</title>
+    <title>Video Processing</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <div class="sidebar">
-            <h2>Caption Settings</h2>
-            <div class="caption-editor">
-                <div class="editor-section">
-                    <h3>Font</h3>
-                    <select id="fontFamily" class="style-input">
-                        <option value="Arial">Arial</option>
-                        <option value="ComicNeue">Comic Neue</option>
-                        <option value="DejaVuSans">DejaVu Sans</option>
-                        <option value="Roboto">Roboto</option>
-                    </select>
-                </div>
+    <div class="container">
+        <header>
+            <h1>Video Processing Tool</h1>
+        </header>
 
-                <div class="editor-section">
-                    <h3>Size</h3>
-                    <input type="range" id="fontSize" min="12" max="72" value="24" class="style-input">
-                    <span id="fontSizeDisplay">24px</span>
-                </div>
-
-                <div class="editor-section">
-                    <h3>Colors</h3>
-                    <div class="color-inputs">
-                        <div class="color-input">
-                            <label>Text</label>
-                            <input type="color" id="textColor" value="#FFFFFF" class="style-input">
-                        </div>
-                        <div class="color-input">
-                            <label>Background</label>
-                            <input type="color" id="bgColor" value="#000000" class="style-input">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="editor-section">
-                    <h3>Style</h3>
-                    <select id="captionStyle" class="style-input">
-                        <option value="classic">Classic</option>
-                        <option value="karaoke">Karaoke</option>
-                        <option value="highlight">Highlight</option>
-                        <option value="word_by_word">Word by Word</option>
-                    </select>
-                </div>
-
-                <div class="editor-section">
-                    <h3>Position</h3>
-                    <select id="position" class="style-input" onchange="updateCaptionPreview()">
-                        <option value="bottom_center">Bottom</option>
-                        <option value="middle_center">Middle</option>
-                        <option value="top_center">Top</option>
-                    </select>
-                </div>
-
-                <div class="editor-section">
-                    <h3>Alignment</h3>
-                    <select id="alignment" class="style-input" onchange="updateCaptionPreview()">
-                        <option value="left">Left</option>
-                        <option value="center">Center</option>
-                        <option value="right">Right</option>
-                    </select>
-                </div>
-
-                <div class="editor-section">
-                    <h3>Timing Adjustment</h3>
-                    <div id="timingControls" class="timing-controls">
-                        <!-- Timing controls will be populated dynamically -->
-                    </div>
-                </div>
-
-                <div class="editor-section">
-                    <h3>Caption Text</h3>
-                    <textarea id="captionText" class="style-input" rows="4" placeholder="Enter your captions here..."></textarea>
-                </div>
-
-                <div class="editor-section">
-                    <button id="applyStyles" class="primary-button">Apply Styles</button>
-                    </div>
-            </div>
-        </div>
-        <div class="main-content">
-            <div class="section upload-section">
+        <main>
+            <section class="upload-section">
                 <h2>Upload or Select Video</h2>
-                <div class="upload-area">
-                    <form id="uploadForm" class="upload-form">
-                        <div class="file-input-wrapper">
-                            <input type="file" name="video" accept="video/*" id="videoInput">
-                            <label for="videoInput" class="file-input-label">Choose a file</label>
+                <form id="uploadForm" class="upload-form">
+                    <div class="dropzone" id="dropzone">
+                        <input type="file" id="videoInput" name="video" accept="video/*" hidden>
+                        <div class="dropzone-content">
+                            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5-5 5 5M12 5v12"/>
+                            </svg>
+                            <p>Drag & drop video or click to browse</p>
                         </div>
-                        <button type="submit" class="primary-button">Upload</button>
-                    </form>
-                </div>
+                    </div>
+                </form>
 
                 <div class="existing-videos">
                     <h3>Existing Videos</h3>
                     <div class="video-grid">
                         {% for video in uploaded_videos %}
-                        <div class="video-thumbnail" data-video="{{ video }}">
-                            <video class="thumbnail-preview">
+                        <div class="video-card" data-video="{{ video }}">
+                            <video class="video-preview">
                                 <source src="{{ url_for('static', filename='uploaded/' + video) }}" type="video/mp4">
                             </video>
-                            <div class="video-name">{{ video }}</div>
+                            <div class="video-info">
+                                <span class="video-name">{{ video }}</span>
+                                <button class="select-btn">Select</button>
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="section process-section">
-                <div id="previewContainer" style="display: none;">
-                    <video id="videoPreview" controls>
-                        Your browser does not support the video tag.
-                    </video>
-                    <button id="processVideo" class="primary-button">Process Video</button>
+            <section class="process-section">
+                <button id="processButton" class="process-btn" disabled>Process Video</button>
+                <div id="processingProgress" class="processing-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill"></div>
+                    </div>
+                    <span class="progress-text">Processing...</span>
                 </div>
-            </div>
+            </section>
 
-            <div class="section output-section">
+            <section class="output-section">
                 <h2>Processed Videos</h2>
-                <div class="video-grid processed-videos">
+                <div class="video-grid">
                     {% for video in processed_videos %}
-                    <div class="video-thumbnail">
-                        <video class="thumbnail-preview" controls>
+                    <div class="video-card">
+                        <video class="video-preview" controls>
                             <source src="{{ url_for('static', filename='processed/' + video) }}" type="video/mp4">
                         </video>
-                        <div class="video-name">{{ video }}</div>
+                        <div class="video-info">
+                            <span class="video-name">{{ video }}</span>
+                            <a href="{{ url_for('static', filename='processed/' + video) }}" download class="download-btn">Download</a>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
-            </div>
-
-            <div id="processingProgress" class="loading" style="display: none;">
-                <div class="spinner"></div>
-                <div class="status-message">Processing video...</div>
-                <div class="progress-bar">
-                    <div class="progress-bar-fill"></div>
-                </div>
-            </div>
-        </div>
+            </section>
+        </main>
     </div>
-
-    <div id="errorMessage" class="error-message"></div>
-    <input type="hidden" id="video_path" name="video_path">
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
