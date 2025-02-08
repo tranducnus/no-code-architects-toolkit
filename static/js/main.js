@@ -3,9 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const videoInput = document.getElementById('videoInput');
     const processButton = document.getElementById('processButton');
     const processingProgress = document.getElementById('processingProgress');
-    const uploadForm = document.getElementById('uploadForm');
     let selectedVideo = null;
-    let processingInterval = null;
 
     // Drag and drop functionality
     dropzone.addEventListener('dragover', (e) => {
@@ -45,36 +43,24 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     async function handleFileUpload(file) {
-        if (!file || !file.type.startsWith('video/')) {
-            alert('Please select a valid video file');
-            return;
-        }
-
         const formData = new FormData();
         formData.append('video', file);
 
         try {
-            processButton.disabled = true;
             const response = await fetch('/upload_only', {
                 method: 'POST',
                 body: formData
             });
 
             const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || 'Upload failed');
-            }
-
             if (data.success) {
-                window.location.reload();
+                location.reload(); // Refresh to show new video
             } else {
                 throw new Error(data.error || 'Upload failed');
             }
         } catch (error) {
             console.error('Upload error:', error);
             alert('Upload failed: ' + error.message);
-        } finally {
-            processButton.disabled = false;
         }
     }
 
@@ -88,15 +74,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Process video
     processButton.addEventListener('click', async () => {
-        if (!selectedVideo) {
-            alert('Please select a video first');
-            return;
-        }
+        if (!selectedVideo) return;
 
         processButton.disabled = true;
         processingProgress.style.display = 'block';
         const progressBar = processingProgress.querySelector('.progress-bar-fill');
-        progressBar.style.width = '0%';
+        let progress = 0;
 
         try {
             const formData = new FormData();
@@ -108,22 +91,18 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || `HTTP error! status: ${response.status}`);
-            }
 
-            if (data.job_id) {
-                await checkStatus(data.job_id, progressBar);
+            if (data.success) {
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
             } else {
                 throw new Error(data.error || 'Processing failed');
             }
         } catch (error) {
             console.error('Processing error:', error);
             alert('Processing failed: ' + error.message);
-        } finally {
-            if (processingInterval) {
-                clearInterval(processingInterval);
-            }
             processButton.disabled = false;
             processingProgress.style.display = 'none';
         }
@@ -191,14 +170,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function checkStatus(jobId, progressBar) {
-    if (processingInterval) {
-        clearInterval(processingInterval);
-    }
-
     let progress = 0;
-    processingInterval = setInterval(() => {
-        progress = Math.min(progress + 2, 95);
-        if (progressBar) {
+    const processingProgress = document.getElementById('processingProgress');
+    const processingInterval = setInterval(() => {
+        progress += 2;
+        if (progress <= 95 && progressBar) {
             progressBar.style.width = `${progress}%`;
         }
     }, 500);
@@ -206,16 +182,18 @@ async function checkStatus(jobId, progressBar) {
     try {
         while (true) {
             const response = await fetch(`/status/${jobId}`);
-            if (!response.ok) {
-                throw new Error('Status check failed');
-            }
-
             const data = await response.json();
+
             if (data.status === 'completed') {
-                if (progressBar) {
-                    progressBar.style.width = '100%';
-                }
-                window.location.reload();
+                clearInterval(processingInterval);
+                if (progressBar) progressBar.style.width = '100%';
+
+                const videoResult = document.getElementById('videoResult');
+                const previewVideo = document.getElementById('previewVideo');
+
+                if (previewVideo) previewVideo.src = data.url;
+                if (videoResult) videoResult.style.display = 'block';
+                if (processingProgress) processingProgress.style.display = 'none';
                 break;
             } else if (data.status === 'failed') {
                 throw new Error(data.error || 'Processing failed');
@@ -224,11 +202,8 @@ async function checkStatus(jobId, progressBar) {
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
     } catch (error) {
-        throw error;
-    } finally {
-        if (processingInterval) {
-            clearInterval(processingInterval);
-            processingInterval = null;
-        }
+        clearInterval(processingInterval);
+        if (processingProgress) processingProgress.style.display = 'none';
+        document.getElementById('errorMessage').textContent = `Error: ${error.message}`;
     }
 }
