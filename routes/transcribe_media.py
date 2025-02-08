@@ -37,8 +37,13 @@ def transcribe(job_id, data):
         result = process_transcription(media_url, output, max_chars)
         logger.info(f"Job {job_id}: Transcription process completed successfully")
 
-        # If the result is a file path, upload it using the unified upload_file() method
-        if output in ['srt', 'vtt', 'ass']:
+        if output == 'srt':
+            # For SRT, return the content directly
+            with open(result, 'r') as f:
+                content = f.read()
+            os.remove(result)  # Clean up the temporary file
+            return content, "/transcribe-media", 200
+        elif output in ['vtt', 'ass']:
             cloud_url = upload_file(result)
             os.remove(result)  # Remove the temporary file after uploading
             return cloud_url, "/transcribe-media", 200

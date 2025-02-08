@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const dropzone = document.getElementById('dropzone');
     const videoInput = document.getElementById('videoInput');
     const processButton = document.getElementById('processButton');
+    const generateTranscriptBtn = document.getElementById('generateTranscriptBtn');
+    const transcriptText = document.getElementById('transcriptText');
     const processingProgress = document.getElementById('processingProgress');
     const uploadForm = document.getElementById('uploadForm');
     let selectedVideo = null;
@@ -175,6 +177,43 @@ function showSection(sectionId) {
                 'bottom': '100%'
             };
             captionPreview.style.top = positions[position.split('_')[0]];
+
+    // Handle transcript generation
+    if (generateTranscriptBtn) {
+        generateTranscriptBtn.addEventListener('click', async () => {
+            if (!selectedVideo) {
+                alert('Please select a video first');
+                return;
+            }
+            
+            generateTranscriptBtn.disabled = true;
+            transcriptText.value = 'Generating transcript...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('media_url', `/static/uploaded/${selectedVideo}`);
+                formData.append('output', 'srt');
+                
+                const response = await fetch('/transcribe-media', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.text();
+                transcriptText.value = data;
+            } catch (error) {
+                console.error('Transcription error:', error);
+                transcriptText.value = 'Error generating transcript';
+            } finally {
+                generateTranscriptBtn.disabled = false;
+            }
+        });
+    }
+
         }
     }
 
