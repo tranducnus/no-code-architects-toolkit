@@ -81,26 +81,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function selectVideo(videoName, card) {
-        document.querySelectorAll('.video-card').forEach(c =>
-            c.classList.remove('selected'));
-        if (card) card.classList.add('selected');
-        selectedVideo = videoName;
-        const previewVideo = document.getElementById('previewVideo');
-        if (previewVideo) {
-            previewVideo.src = `/static/uploaded/${videoName}`;
-        }
-        showSection('editorSection');
-        // Reset transcription state
-        document.getElementById('transcriptText').value = '';
-        document.getElementById('previewBtn').disabled = true;
+    document.querySelectorAll('.video-card').forEach(c =>
+        c.classList.remove('selected'));
+    if (card) card.classList.add('selected');
+    selectedVideo = videoName;
+    const previewVideo = document.getElementById('previewVideo');
+    if (previewVideo) {
+        previewVideo.src = `/static/uploaded/${videoName}`;
     }
+    showSection('editorSection');
+    // Reset transcription state
+    document.getElementById('transcriptText').value = '';
+    document.getElementById('previewBtn').disabled = true;
+}
 
-    function showSection(sectionId) {
-        const section = document.getElementById(sectionId);
-        if (section) {
-            section.style.display = 'block';
-        }
+function showSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.style.display = 'block';
     }
+}
 
     // Process video
     processButton.addEventListener('click', async () => {
@@ -178,36 +178,31 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             captionPreview.style.top = positions[position.split('_')[0]];
 
-        }
+    }
     }
 
     // Handle transcript generation
-    // Generate SRT button handler
-    document.getElementById('generateSrtBtn').addEventListener('click', () => {
-        generateSrtAndAss();
-    });
-
     generateTranscriptBtn.addEventListener('click', async () => {
         if (!selectedVideo) {
             alert('Please select a video first');
             return;
         }
-
+        
         generateTranscriptBtn.disabled = true;
         transcriptText.value = 'Generating transcript...';
         processingProgress.style.display = 'block';
         const progressBar = processingProgress.querySelector('.progress-bar-fill');
         progressBar.style.width = '0%';
-
+        
         try {
             const formData = new FormData();
             formData.append('video', selectedVideo);
-
+            
             const response = await fetch('/upload', {
                 method: 'POST',
                 body: formData
             });
-
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -259,82 +254,6 @@ document.addEventListener('DOMContentLoaded', function() {
             `${transcriptTiming[index] > 0 ? '+' : ''}${transcriptTiming[index]}s`;
     }
 
-    async function generateSrtAndAss() {
-        if (!selectedVideo) {
-            alert('Please select a video first');
-            return;
-        }
-
-        const transcriptText = document.getElementById('transcriptText');
-        const processingProgress = document.getElementById('processingProgress');
-
-        transcriptText.value = 'Generating subtitles...';
-        processingProgress.style.display = 'block';
-
-        try {
-            const response = await fetch('/v1/media/generate-srt', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                    generate_only_subtitles: true
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const result = await response.json();
-            let displayContent = '';
-
-            if (result.srt) {
-                displayContent += '=== SRT Content ===\n' + result.srt + '\n\n';
-            }
-            if (result.ass) {
-                displayContent += '=== ASS Content ===\n' + result.ass;
-            }
-
-            transcriptText.value = displayContent || 'No subtitle content generated';
-
-            if (displayContent) {
-                const blob = new Blob([displayContent], { type: 'text/plain' });
-                const downloadUrl = URL.createObjectURL(blob);
-                const downloadLink = document.createElement('a');
-                downloadLink.href = downloadUrl;
-                downloadLink.download = 'subtitles.txt';
-                downloadLink.click();
-                URL.revokeObjectURL(downloadUrl);
-            }
-        } catch (error) {
-            console.error('Subtitle generation error:', error);
-            let errorMessage = 'Error generating subtitles. Please try again.';
-            
-            if (error.response) {
-                try {
-                    const errorData = await error.response.json();
-                    errorMessage = errorData.error || errorMessage;
-                } catch (e) {
-                    console.error('Error parsing error response:', e);
-                }
-            }
-            
-            alert(errorMessage);
-            transcriptText.value = '';
-        } finally {
-            processingProgress.style.display = 'none';
-        }
-    }
-
-    function formatAssTime(seconds) {
-        const h = Math.floor(seconds / 3600);
-        const m = Math.floor((seconds % 3600) / 60);
-        const s = Math.floor(seconds % 60);
-        const cs = Math.floor((seconds % 1) * 100);
-        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`;
-    }
 });
 
 async function checkStatus(jobId, progressBar) {
