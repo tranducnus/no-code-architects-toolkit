@@ -272,30 +272,28 @@ document.addEventListener('DOMContentLoaded', function() {
         processingProgress.style.display = 'block';
         
         try {
-            const response = await fetch('/v1/media/transcribe', {
+            const formData = new FormData();
+            formData.append('video', selectedVideo);
+            
+            const response = await fetch('/upload', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                    include_text: false,
-                    include_srt: true,
-                    include_segments: false,
-                    word_timestamps: true,
-                    response_type: 'direct'
-                })
+                body: formData
             });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            const result = await response.json();
-            if (result.srt) {
-                transcriptText.value = result.srt;
-            } else {
-                throw new Error('No SRT content received');
+            const data = await response.json();
+            if (data.job_id) {
+                const progressBar = processingProgress.querySelector('.progress-bar-fill');
+                await checkStatus(data.job_id, progressBar);
+                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
+                if (!transcriptResponse.ok) {
+                    throw new Error('Failed to fetch transcript');
+                }
+                const transcriptData = await transcriptResponse.text();
+                transcriptText.value = transcriptData;
             }
         } catch (error) {
             console.error('SRT generation error:', error);
