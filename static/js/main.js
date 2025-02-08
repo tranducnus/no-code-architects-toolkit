@@ -208,10 +208,7 @@ function formatTime(seconds) {
                 },
                 body: JSON.stringify({
                     media_url: `/static/uploaded/${selectedVideo}`,
-                    task: 'transcribe',
-                    include_text: true,
-                    include_srt: false,
-                    include_segments: true
+                    output: 'transcript'
                 })
             });
 
@@ -219,10 +216,8 @@ function formatTime(seconds) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const result = await response.json();
-            transcriptText.value = result.segments.map(segment => 
-                `[${formatTime(segment.start)} --> ${formatTime(segment.end)}] ${segment.text}`
-            ).join('\n');
+            const result = await response.text();
+            transcriptText.value = result;
         } catch (error) {
             console.error('Transcription error:', error);
             transcriptText.value = 'Error generating transcript';
