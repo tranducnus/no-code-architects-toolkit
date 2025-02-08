@@ -1,0 +1,26 @@
+INFO:services.v1.video.caption_video:Available fonts retrieved: {'DejaVu Serif', 'Noto Sans TC', 'Pacifico', 'Shrikhand', 'Comic Neue', 'Oswald', 'Roboto', 'DejaVu Sans Mono', 'Arial CE MT Black', 'The Bold Font', 'Nunito', 'Fredericka the Great', 'DejaVu Sans', 'Arial Light', 'Luckiest Guy', 'Arial', 'Permanent Marker', 'Libre Baskerville', 'Nanum Pen', 'Arial Black', 'Arial CE'}
+INFO:services.v1.video.caption_video:Job b50084e1-7f4b-4cfc-9276-3f5c0220901b: Font 'Arial' is available.
+INFO:services.v1.video.caption_video:Job b50084e1-7f4b-4cfc-9276-3f5c0220901b: Using existing video at static/uploaded/Utube_short.mp4
+INFO:services.v1.video.caption_video:Video resolution determined: 720x1280
+INFO:services.v1.video.caption_video:Job b50084e1-7f4b-4cfc-9276-3f5c0220901b: Video resolution detected = 720x1280
+INFO:services.v1.video.caption_video:Job b50084e1-7f4b-4cfc-9276-3f5c0220901b: Using style 'classic' for captioning.
+INFO:services.v1.video.caption_video:Job b50084e1-7f4b-4cfc-9276-3f5c0220901b: No captions provided, generating transcription.
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/whisper/__init__.py:150: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  checkpoint = torch.load(fp, map_location=device)
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/whisper/transcribe.py:126: UserWarning: FP16 is not supported on CPU; using FP32 instead
+  warnings.warn("FP16 is not supported on CPU; using FP32 instead")
+Detecting language using up to the first 30 seconds. Use `--language` to specify the language
+Detected language: English
+[00:00.000 --> 00:05.720]  I'm Australian and I'm American and today we're gonna compare how we say what's a bird's
+[00:05.720 --> 00:07.920]  trunk that's so weird
+[00:07.920 --> 00:10.140]  thumbs flip flops
+[00:13.020 --> 00:18.120]  thong j-string candy lollies but that's like a specific type of candy
+[00:18.120 --> 00:25.500]  no it's not lollies is it lollies? yeah a liquor store? a bottle or a bottle or a racer? rubber
+[00:27.700 --> 00:28.340]  a
+[00:28.340 --> 00:31.940]  singlet? i tanked up! a dummy pacifier
+[00:31.940 --> 00:35.240]  oh cut crib? it's like kind of similar
+[00:35.240 --> 00:39.960]  it's a yuck! see it? blinker a signal to truck it's a yut
+[00:39.960 --> 00:42.980]  a napkin a Soviet
+[00:42.980 --> 00:46.040]  what? a sidewalk a footpath
+[00:46.860 --> 00:48.180]  is a path your feet
+INFO:services.v1.video.caption_video:Transcription generated successfully for video: static/uploaded/Utube_short.mp4
