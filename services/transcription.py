@@ -168,38 +168,38 @@ def extract_srt_portion(transcription_text):
         str: Extracted SRT content
     """
     lines = transcription_text.split('\n')
-    srt_lines = []
-    in_srt = False
+    segments = []
+    current_segment = None
     
     for line in lines:
-        # Look for timestamp pattern [HH:MM:SS.mmm --> HH:MM:SS.mmm]
-        if re.match(r'\[\d{2}:\d{2}.\d{3} --> \d{2}:\d{2}.\d{3}\]', line):
-            in_srt = True
-            # Convert [00:00.000 --> 00:05.720] to 00:00:00,000 --> 00:05:720
-            timestamp = line.strip('[]')
-            parts = timestamp.split(' --> ')
-            start_time = '00:' + parts[0]
-            end_time = '00:' + parts[1]
-            srt_lines.append(start_time.replace('.', ',') + ' --> ' + end_time.replace('.', ','))
-        elif in_srt and line.strip():
-            # Add subtitle text, removing leading/trailing spaces
-            srt_lines.append(line.strip())
-        elif in_srt and not line.strip():
-            # Empty line between entries
-            srt_lines.append('')
-            in_srt = False
+        # Look for timestamp pattern [00:00.000 --> 00:05.720]
+        timestamp_match = re.match(r'\[(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})\]', line)
+        if timestamp_match:
+            if current_segment:
+                segments.append(current_segment)
+            start_time, end_time = timestamp_match.groups()
+            # Convert timestamp format from [MM:SS.mmm] to [HH:MM:SS,mmm]
+            start_time = '00:' + start_time.replace('.', ',')
+            end_time = '00:' + end_time.replace('.', ',')
+            current_segment = {
+                'timestamp': f"{start_time} --> {end_time}",
+                'text': []
+            }
+        elif current_segment and line.strip():
+            current_segment['text'].append(line.strip())
     
-    # Add index numbers and ensure proper SRT formatting
-    srt_content = []
-    index = 1
-    for i in range(0, len(srt_lines), 2):
-        if i+1 < len(srt_lines):
-            srt_content.extend([
-                str(index),
-                srt_lines[i],
-                srt_lines[i+1],
-                ''
-            ])
-            index += 1
+    # Add the last segment if exists
+    if current_segment:
+        segments.append(current_segment)
     
-    return '\n'.join(srt_content).strip()
+    # Format as SRT
+    srt_parts = []
+    for i, segment in enumerate(segments, 1):
+        srt_parts.extend([
+            str(i),
+            segment['timestamp'],
+            ' '.join(segment['text']),
+            ''
+        ])
+    
+    return '\n'.join(srt_parts).strip()
