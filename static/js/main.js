@@ -196,16 +196,10 @@ function showSection(sectionId) {
         
         try {
             const formData = new FormData();
-            formData.append('media_url', `/static/uploaded/${selectedVideo}`);
-            formData.append('output', 'srt');
-            formData.append('task', 'transcribe');
-            formData.append('language', 'auto');
+            formData.append('video', selectedVideo);
             
-            const response = await fetch('/transcribe-media', {
+            const response = await fetch('/upload', {
                 method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + getAuthToken()
-                },
                 body: formData
             });
             
@@ -213,12 +207,22 @@ function showSection(sectionId) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const result = await response.text();
-            transcriptText.value = result;
-            progressBar.style.width = '100%';
+            const data = await response.json();
+            if (data.job_id) {
+                await checkStatus(data.job_id, progressBar);
+                // After job completes, fetch the transcript
+                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
+                if (!transcriptResponse.ok) {
+                    throw new Error('Failed to fetch transcript');
+                }
+                const transcriptData = await transcriptResponse.text();
+                transcriptText.value = transcriptData;
+            } else {
+                throw new Error(data.error || 'Processing failed');
+            }
         } catch (error) {
             console.error('Transcription error:', error);
-            transcriptText.value = 'Error generating transcript';
+            transcriptText.value = 'Error generating transcript: ' + error.message;
         } finally {
             if (processingInterval) {
                 clearInterval(processingInterval);
