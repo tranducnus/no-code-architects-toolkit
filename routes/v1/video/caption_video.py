@@ -24,13 +24,28 @@ def generate_transcript():
     video_path = os.path.join(os.getcwd(), 'static', 'uploaded', video)
     
     try:
+        # Validate video directory exists
+        video_dir = os.path.dirname(video_path)
+        if not os.path.exists(video_dir):
+            os.makedirs(video_dir, exist_ok=True)
+            logger.info(f"Created video directory: {video_dir}")
+
         if not os.path.exists(video_path):
             logger.error(f"Video file not found: {video_path}")
             return jsonify({"error": "Video file not found"}), 404
             
         result = generate_transcription(video_path)
-        if not result or not isinstance(result, dict) or 'text' not in result:
-            return jsonify({"error": "Invalid transcription result"}), 500
+        if not result:
+            logger.error("Transcription returned None")
+            return jsonify({"error": "Transcription failed - no result"}), 500
+            
+        if not isinstance(result, dict):
+            logger.error(f"Invalid transcription result type: {type(result)}")
+            return jsonify({"error": "Invalid transcription result type"}), 500
+            
+        if 'text' not in result:
+            logger.error("Transcription result missing 'text' field")
+            return jsonify({"error": "Invalid transcription result format"}), 500
             
         return jsonify({
             "transcript": result['text']

@@ -1,6 +1,31 @@
 let selectedVideo = null;
 let currentTranscript = null;
 
+// Handle file upload
+async function handleFileUpload(file) {
+    const formData = new FormData();
+    formData.append('video', file);
+
+    try {
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error('Upload failed');
+        }
+
+        const data = await response.json();
+        if (data.video) {
+            selectVideo(data.video);
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('Failed to upload video: ' + error.message);
+    }
+}
+
 // Navigation between sections
 function showSection(sectionId) {
     ['uploadSection', 'editorSection', 'exportSection'].forEach(id => {
@@ -45,7 +70,16 @@ async function generateTranscript() {
         previewBtn.disabled = false;
     } catch (error) {
         console.error('Transcription error:', error);
-        alert('Failed to generate transcript: ' + error.message);
+        const errorMessage = error.response ? 
+            await error.response.text() : 
+            error.message || 'Unknown error occurred';
+        alert('Failed to generate transcript: ' + errorMessage);
+        
+        // Log detailed error for debugging
+        logger.error('Detailed transcription error:', {
+            error: errorMessage,
+            video: selectedVideo
+        });
     } finally {
         generateBtn.disabled = false;
         generateBtn.textContent = 'Generate Transcript';
