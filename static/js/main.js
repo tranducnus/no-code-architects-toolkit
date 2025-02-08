@@ -207,16 +207,20 @@ function showSection(sectionId) {
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            if (data.result) {
-                // Create blob and download link
-                const blob = new Blob([data.result], { type: 'text/srt' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
+            if (!data || !data.result) {
+                throw new Error('Invalid response format');
+            }
+
+            // Create blob and download link
+            const blob = new Blob([data.result], { type: 'text/srt' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
                 a.download = selectedVideo.replace(/\.[^/.]+$/, '') + '.srt';
                 document.body.appendChild(a);
                 a.click();
@@ -229,7 +233,7 @@ function showSection(sectionId) {
         } catch (error) {
             console.error('SRT Generation error:', error);
             transcriptText.value = 'Error generating SRT file';
-            alert('Failed to generate SRT file. Please try again.');
+            alert(error.message || 'Failed to generate SRT file. Please try again.');
         } finally {
             generateTranscriptBtn.disabled = false;
             processingProgress.style.display = 'none';

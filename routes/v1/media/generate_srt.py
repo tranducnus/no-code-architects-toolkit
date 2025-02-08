@@ -36,17 +36,32 @@ def generate_srt(job_id, data):
         srt_result = process_transcription(media_url, output_type='srt', language=language)
         logger.info(f"Job {job_id}: SRT generation completed successfully")
 
+        if not srt_result or not os.path.exists(srt_result):
+            logger.error(f"Job {job_id}: SRT file not generated")
+            return {"error": "Failed to generate SRT file"}, "/v1/media/generate-srt", 400
+
         # Return SRT content directly
-        with open(srt_result, 'r') as f:
-            srt_content = f.read()
+        try:
+            with open(srt_result, 'r') as f:
+                srt_content = f.read()
             
-        return {
-            "job_id": job_id,
-            "status": "completed",
-            "result": srt_content,
-            "type": "srt"
-        }, "/v1/media/generate-srt", 200
+            if not srt_content.strip():
+                raise ValueError("Generated SRT file is empty")
+
+            return {
+                "job_id": job_id,
+                "status": "completed",
+                "result": srt_content,
+                "type": "srt"
+            }, "/v1/media/generate-srt", 200
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(srt_result):
+                os.remove(srt_result)
 
     except Exception as e:
         logger.error(f"Job {job_id}: Error during SRT generation - {str(e)}")
-        return str(e), "/v1/media/generate-srt", 500
+        error_message = str(e)
+        if "No such file" in error_message:
+            return {"error": "Video file not found"}, "/v1/media/generate-srt", 404
+        return {"error": error_message}, "/v1/media/generate-srt", 500
