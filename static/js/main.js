@@ -196,13 +196,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const videoUrl = window.location.origin + `/static/uploaded/${selectedVideo}`;
-            const response = await fetch('/api/v1/media/generate-srt-video', {
+            const response = await fetch('/transcribe-media', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    video_url: videoUrl,
+                    media_url: videoUrl,
+                    output: 'srt',
                     language: 'auto'
                 })
             });
