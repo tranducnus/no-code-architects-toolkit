@@ -267,84 +267,55 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const transcriptText = document.getElementById('transcriptText');
         const processingProgress = document.getElementById('processingProgress');
-        
+
         transcriptText.value = 'Generating SRT and ASS files...';
         processingProgress.style.display = 'block';
-        
+
         try {
-            const response = await fetch('/v1/media/transcribe', {
+            const formData = new FormData();
+            formData.append('video_path', `/static/uploaded/${selectedVideo}`);
+            formData.append('generate_only_subtitles', 'true');
+
+            const response = await fetch('/v1/media/generate-srt', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                    task: 'transcribe',
-                    include_text: false,
-                    include_srt: true,
-                    include_segments: true,
-                    word_timestamps: true,
-                    response_type: 'direct'
-                })
+                body: formData
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const result = await response.json();
-            
-            // Display SRT content
+
+            // Display both SRT and ASS content
+            let displayContent = '';
             if (result.srt) {
-                transcriptText.value = result.srt;
-                
-                // Create download links for SRT and ASS
-                const srtBlob = new Blob([result.srt], { type: 'text/plain' });
-                const srtUrl = URL.createObjectURL(srtBlob);
-                const srtLink = document.createElement('a');
-                srtLink.href = srtUrl;
-                srtLink.download = 'caption.srt';
-                srtLink.click();
-                
-                // Generate and download ASS
-                const assContent = generateAssContent(result.segments);
-                const assBlob = new Blob([assContent], { type: 'text/plain' });
-                const assUrl = URL.createObjectURL(assBlob);
-                const assLink = document.createElement('a');
-                assLink.href = assUrl;
-                assLink.download = 'caption.ass';
-                assLink.click();
+                displayContent += '=== SRT Content ===\n' + result.srt + '\n\n';
+            }
+            if (result.ass) {
+                displayContent += '=== ASS Content ===\n' + result.ass;
+            }
+
+            transcriptText.value = displayContent || 'No subtitle content generated';
+
+            // Enable download buttons if content is available
+            if (result.srt || result.ass) {
+                const blob = new Blob([displayContent], { type: 'text/plain' });
+                const downloadUrl = URL.createObjectURL(blob);
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = downloadUrl;
+                downloadLink.download = 'subtitles.txt';
+                downloadLink.click();
+
+                URL.revokeObjectURL(downloadUrl);
             }
         } catch (error) {
-            console.error('Transcription error:', error);
-            transcriptText.value = 'Error generating transcription files';
+            console.error('Subtitle generation error:', error);
+            transcriptText.value = 'Error generating subtitles: ' + error.message;
         } finally {
             processingProgress.style.display = 'none';
         }
-    }
-
-    function generateAssContent(segments) {
-        const header = `[Script Info]
-ScriptType: v4.00+
-PlayResX: 1280
-PlayResY: 720
-ScaledBorderAndShadow: yes
-
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,48,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,2,2,10,10,10,1
-
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n`;
-
-        const events = segments.map((segment, index) => {
-            const startTime = formatAssTime(segment.start);
-            const endTime = formatAssTime(segment.end);
-            const text = segment.text.trim();
-            return `Dialogue: 0,${startTime},${endTime},Default,,0,0,0,,${text}`;
-        }).join('\n');
-
-        return header + events;
     }
 
     function formatAssTime(seconds) {
@@ -353,11 +324,6 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\
         const s = Math.floor(seconds % 60);
         const cs = Math.floor((seconds % 1) * 100);
         return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`;
-    }
-            transcriptText.value = 'Error generating SRT and ASS files';
-        } finally {
-            processingProgress.style.display = 'none';
-        }
     }
 });
 
