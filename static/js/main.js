@@ -188,6 +188,9 @@ function showSection(sectionId) {
             
             generateTranscriptBtn.disabled = true;
             transcriptText.value = 'Generating transcript...';
+            processingProgress.style.display = 'block';
+            const progressBar = processingProgress.querySelector('.progress-bar-fill');
+            progressBar.style.width = '0%';
             
             try {
                 const formData = new FormData();
@@ -199,17 +202,26 @@ function showSection(sectionId) {
                     body: formData
                 });
                 
+                const data = await response.json();
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
                 }
-                
-                const data = await response.text();
-                transcriptText.value = data;
+
+                if (data.job_id) {
+                    const result = await checkStatus(data.job_id, progressBar);
+                    transcriptText.value = result;
+                } else {
+                    throw new Error(data.error || 'Transcription failed');
+                }
             } catch (error) {
                 console.error('Transcription error:', error);
                 transcriptText.value = 'Error generating transcript';
             } finally {
+                if (processingInterval) {
+                    clearInterval(processingInterval);
+                }
                 generateTranscriptBtn.disabled = false;
+                processingProgress.style.display = 'none';
             }
         });
     }
