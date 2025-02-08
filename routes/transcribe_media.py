@@ -40,12 +40,12 @@ def transcribe(job_id, data):
             with open(result, 'r') as f:
                 content = f.read()
             os.remove(result)  # Clean up the temporary file
-            if output == 'ass':
-                return {
-                    "status": "completed",
-                    "result": content
-                }, 200
-            return content, 200
+            return {
+                "job_id": job_id,
+                "status": "completed", 
+                "result": content,
+                "type": output
+            }, 200
         else:
             # For plain transcript
             return {

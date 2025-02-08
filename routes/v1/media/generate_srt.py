@@ -35,10 +35,10 @@ def generate_srt(job_id, data):
         result = process_transcription(media_url, output_type='srt')
         logger.info(f"Job {job_id}: SRT generation completed successfully")
 
-        with open(result, 'r') as f:
-            srt_content = f.read()
-        
-        return srt_content, "/v1/media/generate-srt", 200
+        cloud_url = upload_file(result)
+        logger.info(f"Job {job_id}: SRT file uploaded to cloud storage: {cloud_url}")
+
+        return cloud_url, "/v1/media/generate-srt", 200
 
     except Exception as e:
         logger.error(f"Job {job_id}: Error during SRT generation - {str(e)}")

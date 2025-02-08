@@ -182,6 +182,53 @@ function showSection(sectionId) {
     }
 
     // Handle transcript generation
+    // Generate SRT button handler
+    document.getElementById('generateSrtBtn').addEventListener('click', async () => {
+        if (!selectedVideo) {
+            alert('Please select a video first');
+            return;
+        }
+        
+        const generateSrtBtn = document.getElementById('generateSrtBtn');
+        generateSrtBtn.disabled = true;
+        transcriptText.value = 'Generating SRT...';
+        processingProgress.style.display = 'block';
+        const progressBar = processingProgress.querySelector('.progress-bar-fill');
+        progressBar.style.width = '0%';
+        
+        try {
+            const formData = new FormData();
+            formData.append('video', selectedVideo);
+            formData.append('output', 'srt');
+            
+            const response = await fetch('/v1/media/generate-srt', {
+                method: 'POST',
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.result) {
+                transcriptText.value = data.result;
+                progressBar.style.width = '100%';
+            }
+        } catch (error) {
+            console.error('SRT generation error:', error);
+            transcriptText.value = 'Error generating SRT';
+        } finally {
+            generateSrtBtn.disabled = false;
+            processingProgress.style.display = 'none';
+        }
+    });
+
     generateTranscriptBtn.addEventListener('click', async () => {
         if (!selectedVideo) {
             alert('Please select a video first');
@@ -190,116 +237,18 @@ function showSection(sectionId) {
         
         generateTranscriptBtn.disabled = true;
         transcriptText.value = 'Generating transcript...';
-
-        try {
-            // Generate SRT
-            const srtResponse = await fetch('/v1/media/transcribe', {
-                method: 'POST',
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                    include_srt: true,
-                    include_text: true,
-                    response_type: 'direct'
-                }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!srtResponse.ok) throw new Error('Transcription failed');
-            const result = await srtResponse.json();
-            
-            // Download SRT file
-            const srtBlob = new Blob([result.srt], { type: 'text/srt' });
-            const srtUrl = URL.createObjectURL(srtBlob);
-            const srtLink = document.createElement('a');
-            srtLink.href = srtUrl;
-            srtLink.download = `${selectedVideo}.srt`;
-            document.body.appendChild(srtLink);
-            srtLink.click();
-            document.body.removeChild(srtLink);
-            URL.revokeObjectURL(srtUrl);
-
-            // Generate ASS file
-            const assResponse = await fetch('/v1/media/transcribe', {
-                method: 'POST',
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                    output: 'ass'
-                }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!assResponse.ok) throw new Error('ASS generation failed');
-            const assData = await assResponse.json();
-            
-            // Download ASS file
-            const assBlob = new Blob([assData.result], { type: 'text/ass' });
-            const assUrl = URL.createObjectURL(assBlob);
-            const assLink = document.createElement('a');
-            assLink.href = assUrl;
-            assLink.download = `${selectedVideo}.ass`;
-            document.body.appendChild(assLink);
-            assLink.click();
-            document.body.removeChild(assLink);
-            URL.revokeObjectURL(assUrl);
-
-            transcriptText.value = 'Transcripts generated and downloaded successfully!';
-        } catch (error) {
-            console.error('Transcription error:', error);
-            transcriptText.value = 'Error generating transcripts. Please try again.';
-            alert('Error generating transcripts');
-        } finally {
-            generateTranscriptBtn.disabled = false;
-        }
+        processingProgress.style.display = 'block';
+        const progressBar = processingProgress.querySelector('.progress-bar-fill');
+        progressBar.style.width = '0%';
         
         try {
             const formData = new FormData();
             formData.append('video', selectedVideo);
-
-            // Generate SRT
-            const srtResponse = await fetch('/v1/media/generate-srt', {
+            
+            const response = await fetch('/upload', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`
-                })
+                body: formData
             });
-
-            if (srtResponse.ok) {
-                const srtBlob = new Blob([await srtResponse.text()], { type: 'text/srt' });
-                const srtUrl = window.URL.createObjectURL(srtBlob);
-                const srtLink = document.createElement('a');
-                srtLink.href = srtUrl;
-                srtLink.download = `${selectedVideo}.srt`;
-                srtLink.click();
-            }
-
-            // Generate ASS/SSA subtitles
-            const assResponse = await fetch('/transcribe-media', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                    output: 'ass'
-                })
-            });
-
-            if (assResponse.ok) {
-                const assData = await assResponse.json();
-                const assBlob = new Blob([assData.result], { type: 'text/ass' });
-                const assUrl = window.URL.createObjectURL(assBlob);
-                const assLink = document.createElement('a');
-                assLink.href = assUrl;
-                assLink.download = `${selectedVideo}.ass`;
-                assLink.click();
-            }
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
