@@ -208,10 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                    task: 'transcribe',
-                    include_text: true,
-                    include_segments: true
+                    media_url: `/static/uploaded/${selectedVideo}`
                 })
             });
 

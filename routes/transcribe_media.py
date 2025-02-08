@@ -1,10 +1,10 @@
+
 from flask import Blueprint
 from app_utils import *
 import logging
 import os
-from services.transcription import process_transcription
-from services.authentication import authenticate
-from services.cloud_storage import upload_file
+import whisper
+from datetime import timedelta
 
 transcribe_bp = Blueprint('transcribe', __name__)
 logger = logging.getLogger(__name__)
@@ -37,8 +37,9 @@ def transcribe(data):
             formatted_transcript.append(formatted_line)
             
         os.remove(input_filename)
-        return "\n".join(formatted_transcript), 200
+        transcript_text = "\n".join(formatted_transcript)
+        return transcript_text, 200
         
     except Exception as e:
-        logger.error(f"Job {job_id}: Error during transcription process - {str(e)}")
-        return str(e), "/transcribe-media", 500
+        logger.error(f"Error during transcription process - {str(e)}")
+        return str(e), 500
