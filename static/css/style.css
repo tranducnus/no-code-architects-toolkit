@@ -120,25 +120,17 @@ h2 {
     background: #2563eb;
 }
 
-.process-btn, .download-btn {
-    background-color: #4CAF50;
+.process-btn {
+    background: #3b82f6;
     color: white;
-    padding: 10px 20px;
     border: none;
-    border-radius: 4px;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 500;
     cursor: pointer;
-    font-size: 16px;
-    text-decoration: none;
-    display: inline-block;
-    margin: 10px 0;
-}
-
-.download-btn {
-    background-color: #2196F3;
-}
-
-.download-btn:hover {
-    background-color: #1976D2;
+    transition: background 0.2s;
+    width: 100%;
 }
 
 .process-btn:disabled {
