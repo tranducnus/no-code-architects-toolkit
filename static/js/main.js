@@ -272,31 +272,88 @@ document.addEventListener('DOMContentLoaded', function() {
         processingProgress.style.display = 'block';
         
         try {
-            const formData = new FormData();
-            formData.append('video', selectedVideo);
-            
-            const response = await fetch('/upload', {
+            const response = await fetch('/v1/media/transcribe', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                    task: 'transcribe',
+                    include_text: false,
+                    include_srt: true,
+                    include_segments: true,
+                    word_timestamps: true,
+                    response_type: 'direct'
+                })
             });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            const data = await response.json();
-            if (data.job_id) {
-                const progressBar = processingProgress.querySelector('.progress-bar-fill');
-                await checkStatus(data.job_id, progressBar);
-                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
-                if (!transcriptResponse.ok) {
-                    throw new Error('Failed to fetch transcript');
-                }
-                const transcriptData = await transcriptResponse.text();
-                transcriptText.value = transcriptData;
+            const result = await response.json();
+            
+            // Display SRT content
+            if (result.srt) {
+                transcriptText.value = result.srt;
+                
+                // Create download links for SRT and ASS
+                const srtBlob = new Blob([result.srt], { type: 'text/plain' });
+                const srtUrl = URL.createObjectURL(srtBlob);
+                const srtLink = document.createElement('a');
+                srtLink.href = srtUrl;
+                srtLink.download = 'caption.srt';
+                srtLink.click();
+                
+                // Generate and download ASS
+                const assContent = generateAssContent(result.segments);
+                const assBlob = new Blob([assContent], { type: 'text/plain' });
+                const assUrl = URL.createObjectURL(assBlob);
+                const assLink = document.createElement('a');
+                assLink.href = assUrl;
+                assLink.download = 'caption.ass';
+                assLink.click();
             }
         } catch (error) {
-            console.error('SRT generation error:', error);
+            console.error('Transcription error:', error);
+            transcriptText.value = 'Error generating transcription files';
+        } finally {
+            processingProgress.style.display = 'none';
+        }
+    }
+
+    function generateAssContent(segments) {
+        const header = `[Script Info]
+ScriptType: v4.00+
+PlayResX: 1280
+PlayResY: 720
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,48,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,2,2,10,10,10,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n`;
+
+        const events = segments.map((segment, index) => {
+            const startTime = formatAssTime(segment.start);
+            const endTime = formatAssTime(segment.end);
+            const text = segment.text.trim();
+            return `Dialogue: 0,${startTime},${endTime},Default,,0,0,0,,${text}`;
+        }).join('\n');
+
+        return header + events;
+    }
+
+    function formatAssTime(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = Math.floor(seconds % 60);
+        const cs = Math.floor((seconds % 1) * 100);
+        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`;
+    }
             transcriptText.value = 'Error generating SRT and ASS files';
         } finally {
             processingProgress.style.display = 'none';
