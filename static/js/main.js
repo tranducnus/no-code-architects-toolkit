@@ -196,9 +196,10 @@ function showSection(sectionId) {
         
         try {
             const formData = new FormData();
-            formData.append('video', selectedVideo);
+            formData.append('media_url', `/static/uploaded/${selectedVideo}`);
+            formData.append('output', 'srt');
             
-            const response = await fetch('/upload', {
+            const response = await fetch('/transcribe-media', {
                 method: 'POST',
                 body: formData
             });
@@ -207,17 +208,9 @@ function showSection(sectionId) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
-            if (data.job_id) {
-                await checkStatus(data.job_id, progressBar);
-                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
-                if (!transcriptResponse.ok) {
-                    throw new Error('Failed to fetch transcript');
-                }
-                const transcriptData = await transcriptResponse.text();
-                transcriptText.value = transcriptData;
-                progressBar.style.width = '100%';
-            }
+            const result = await response.text();
+            transcriptText.value = result;
+            progressBar.style.width = '100%';
         } catch (error) {
             console.error('Transcription error:', error);
             transcriptText.value = 'Error generating transcript';
