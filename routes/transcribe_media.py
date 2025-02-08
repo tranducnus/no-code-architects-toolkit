@@ -26,12 +26,21 @@ def transcribe(data):
     try:
         model = whisper.load_model("base")
         input_filename = download_file(media_url, os.path.join(STORAGE_PATH, 'input_media'))
+        logger.info(f"Downloaded file to {input_filename}")
         result = model.transcribe(input_filename)
+        logger.info("Transcription completed")
         
-        # Format transcript with timestamps
         formatted_transcript = []
         for segment in result['segments']:
             start_time = timedelta(seconds=segment['start'])
+            end_time = timedelta(seconds=segment['end'])
+            text = segment['text'].strip()
+            formatted_line = f"[{start_time} --> {end_time}] {text}"
+            formatted_transcript.append(formatted_line)
+            
+        transcript_text = "\n".join(formatted_transcript)
+        os.remove(input_filename)
+        return transcript_text, 200
             end_time = timedelta(seconds=segment['end'])
             text = segment['text'].strip()
             formatted_line = f"[{start_time} --> {end_time}] {text}"
