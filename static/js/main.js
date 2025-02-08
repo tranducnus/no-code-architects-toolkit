@@ -182,6 +182,48 @@ function showSection(sectionId) {
     }
 
     // Handle transcript generation
+    // Generate SRT button handler
+    document.getElementById('generateSrtBtn').addEventListener('click', async () => {
+        if (!selectedVideo) {
+            alert('Please select a video first');
+            return;
+        }
+        
+        const generateSrtBtn = document.getElementById('generateSrtBtn');
+        generateSrtBtn.disabled = true;
+        transcriptText.value = 'Generating SRT...';
+        processingProgress.style.display = 'block';
+        const progressBar = processingProgress.querySelector('.progress-bar-fill');
+        progressBar.style.width = '0%';
+        
+        try {
+            const formData = new FormData();
+            formData.append('video', selectedVideo);
+            formData.append('output', 'srt');
+            
+            const response = await fetch('/transcribe-media', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.result) {
+                transcriptText.value = data.result;
+                progressBar.style.width = '100%';
+            }
+        } catch (error) {
+            console.error('SRT generation error:', error);
+            transcriptText.value = 'Error generating SRT';
+        } finally {
+            generateSrtBtn.disabled = false;
+            processingProgress.style.display = 'none';
+        }
+    });
+
     generateTranscriptBtn.addEventListener('click', async () => {
         if (!selectedVideo) {
             alert('Please select a video first');
