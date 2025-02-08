@@ -34,37 +34,67 @@ function addVideoToGrid(videoName) {
     grid.appendChild(videoCard);
 }
 
-function addProcessedVideo(videoPath) {
-    const grid = document.querySelector('.output-section .video-grid');
-    const videoCard = document.createElement('div');
-    videoCard.className = 'video-card';
-
-    videoCard.innerHTML = `
-        <video class="video-preview" controls>
-            <source src="${videoPath}" type="video/mp4">
-        </video>
-        <div class="video-info">
-            <span class="video-name">${videoPath.split('/').pop()}</span>
-            <a href="${videoPath}" download class="download-btn">Download</a>
-        </div>
-    `;
-
-    grid.appendChild(videoCard);
-}
-
-function updateTranscription(transcriptionContent) {
+function updateTranscription(segments) {
     const editor = document.querySelector('.transcription-content');
     editor.innerHTML = '';
     
-    transcriptionContent.forEach((segment, index) => {
+    segments.forEach((segment, index) => {
         const segmentDiv = document.createElement('div');
         segmentDiv.className = 'transcription-segment';
         segmentDiv.innerHTML = `
             <span class="timestamp">${formatTime(segment.start)} - ${formatTime(segment.end)}</span>
             <span class="text" contenteditable="true">${segment.text}</span>
         `;
+
+        // Make segments editable
+        const textSpan = segmentDiv.querySelector('.text');
+        textSpan.addEventListener('blur', () => {
+            segment.text = textSpan.textContent;
+        });
+
         editor.appendChild(segmentDiv);
     });
+
+    // Show style controls after transcription
+    document.querySelector('.style-controls').style.display = 'block';
+}
+
+function previewCaptions() {
+    if (!selectedVideo || !transcriptionData) return;
+
+    const settings = getStyleSettings();
+    
+    fetch('/v1/video/preview', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            video: selectedVideo,
+            segments: transcriptionData.segments,
+            settings: settings
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) throw new Error(data.error);
+        // Update preview (implemented in HTML/CSS)
+        updatePreview(data);
+    })
+    .catch(error => {
+        console.error('Preview error:', error);
+    });
+}
+
+function getStyleSettings() {
+    return {
+        font_family: document.getElementById('fontFamily').value,
+        font_size: parseInt(document.getElementById('fontSize').value),
+        style: document.getElementById('captionStyle').value,
+        position: document.getElementById('position').value,
+        line_color: document.getElementById('textColor').value,
+        word_color: document.getElementById('highlightColor').value
+    };
 }
 
 function formatTime(seconds) {
@@ -75,18 +105,6 @@ function formatTime(seconds) {
     return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
 }
 
-function previewCaptions() {
-    const settings = {
-        font_family: document.getElementById('fontFamily').value,
-        font_size: parseInt(document.getElementById('fontSize').value),
-        text_color: document.getElementById('textColor').value,
-        position: document.getElementById('position').value
-    };
-    
-    // Here we would update the video preview with the new caption styles
-    // This would be implemented in Phase 2
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     const dropzone = document.getElementById('dropzone');
     const videoInput = document.getElementById('videoInput');
@@ -94,21 +112,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportButton = document.getElementById('exportButton');
     const processingProgress = document.getElementById('processingProgress');
 
-    // Initialize existing videos
-    document.querySelectorAll('.video-card').forEach(card => {
-        const videoName = card.dataset.video;
-        if (videoName) {
-            card.querySelector('.select-btn')?.addEventListener('click', () => {
-                selectVideo(videoName, card);
-            });
-        }
-    });
-
-    // Style control event listeners
+    // Initialize style controls
     document.querySelectorAll('.style-options select, .style-options input').forEach(control => {
         control.addEventListener('change', previewCaptions);
     });
 
+    // File upload handlers
     dropzone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropzone.style.borderColor = '#3b82f6';
@@ -150,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    video: selectedVideo
+                    video_url: `/static/uploaded/${selectedVideo}`
                 })
             });
 
@@ -178,21 +187,15 @@ document.addEventListener('DOMContentLoaded', function() {
         processingProgress.style.display = 'block';
         
         try {
-            const settings = {
-                font_family: document.getElementById('fontFamily').value,
-                font_size: parseInt(document.getElementById('fontSize').value),
-                text_color: document.getElementById('textColor').value,
-                position: document.getElementById('position').value
-            };
-
+            const settings = getStyleSettings();
             const response = await fetch('/v1/video/export', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    video: selectedVideo,
-                    transcription: transcriptionData,
+                    video_url: `/static/uploaded/${selectedVideo}`,
+                    segments: transcriptionData.segments,
                     settings: settings
                 })
             });
