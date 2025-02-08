@@ -157,3 +157,49 @@ def generate_ass_subtitle(result, max_chars):
                 ass_content += f"Dialogue: 0,{start},{end},Default,,0,0,0,,{caption_with_highlight}\n"
 
     return ass_content
+def extract_srt_portion(transcription_text):
+    """
+    Extracts only the SRT formatted portions from transcription output.
+    
+    Args:
+        transcription_text (str): Full transcription text including SRT portions
+        
+    Returns:
+        str: Extracted SRT content
+    """
+    lines = transcription_text.split('\n')
+    srt_lines = []
+    in_srt = False
+    
+    for line in lines:
+        # Look for timestamp pattern [HH:MM:SS.mmm --> HH:MM:SS.mmm]
+        if re.match(r'\[\d{2}:\d{2}.\d{3} --> \d{2}:\d{2}.\d{3}\]', line):
+            in_srt = True
+            # Convert [00:00.000 --> 00:05.720] to 00:00:00,000 --> 00:05:720
+            timestamp = line.strip('[]')
+            parts = timestamp.split(' --> ')
+            start_time = '00:' + parts[0]
+            end_time = '00:' + parts[1]
+            srt_lines.append(start_time.replace('.', ',') + ' --> ' + end_time.replace('.', ','))
+        elif in_srt and line.strip():
+            # Add subtitle text, removing leading/trailing spaces
+            srt_lines.append(line.strip())
+        elif in_srt and not line.strip():
+            # Empty line between entries
+            srt_lines.append('')
+            in_srt = False
+    
+    # Add index numbers and ensure proper SRT formatting
+    srt_content = []
+    index = 1
+    for i in range(0, len(srt_lines), 2):
+        if i+1 < len(srt_lines):
+            srt_content.extend([
+                str(index),
+                srt_lines[i],
+                srt_lines[i+1],
+                ''
+            ])
+            index += 1
+    
+    return '\n'.join(srt_content).strip()
