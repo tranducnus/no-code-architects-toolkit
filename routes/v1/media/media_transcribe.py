@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
         "response_type": {"type": "string", "enum": ["direct", "cloud"]},
         "language": {"type": "string"},
         "webhook_url": {"type": "string", "format": "uri"},
-        "id": {"type": "string"}
+        "id": {"type": "string"},
+        "cut_off_time": {"type": "number", "format": "float"} # Added cut_off_time parameter
     },
     "required": ["media_url"],
     "additionalProperties": False
@@ -40,16 +41,18 @@ def transcribe(job_id, data):
     language = data.get('language', None)
     webhook_url = data.get('webhook_url')
     id = data.get('id')
+    cut_off_time = data.get('cut_off_time') # Get cut_off_time from data
 
     logger.info(f"Job {job_id}: Received transcription request for {media_url}")
 
+    cut_off_time = 4.54 if cut_off_time is None else float(cut_off_time) #Set default if not provided
     try:
-        result = process_transcribe_media(media_url, task, include_text, include_srt, include_segments, word_timestamps, response_type, language, job_id)
+        result = process_transcribe_media(media_url, task, include_text, include_srt, include_segments, word_timestamps, response_type, language, job_id, cut_off_time=cut_off_time)
         logger.info(f"Job {job_id}: Transcription process completed successfully")
 
         # If the result is a file path, upload it using the unified upload_file() method
         if response_type == "direct":
-           
+
             result_json = {
                 "text": result[0],
                 "srt": result[1],
@@ -68,13 +71,13 @@ def transcribe(job_id, data):
 
             if include_text is True:
                 os.remove(result[0])  # Remove the temporary file after uploading
-            
+
             if include_srt is True:
                 os.remove(result[1])
 
             if include_segments is True:
                 os.remove(result[2])
-            
+
             return cloud_urls, "/v1/transcribe/media", 200
 
     except Exception as e:

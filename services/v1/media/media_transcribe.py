@@ -13,9 +13,11 @@ logging.basicConfig(level=logging.INFO)
 # Set the default local storage directory
 STORAGE_PATH = "/tmp/"
 
-def process_transcribe_media(media_url, task, include_text, include_srt, include_segments, word_timestamps, response_type, language, job_id, srt_only=False):
+def process_transcribe_media(media_url, task, include_text, include_srt, include_segments, word_timestamps, response_type, language, job_id, srt_only=False, cut_off_time=None):
     """Transcribe or translate media and return the transcript/translation, SRT or VTT file path."""
     logger.info(f"Starting {task} for media URL: {media_url}")
+    if cut_off_time:
+        logger.info(f"Transcript will be truncated at {cut_off_time} seconds")
     input_filename = download_file(media_url, os.path.join(STORAGE_PATH, 'input_media'))
     logger.info(f"Downloaded media to local file: {input_filename}")
 
@@ -54,7 +56,15 @@ def process_transcribe_media(media_url, task, include_text, include_srt, include
             for i, segment in enumerate(result['segments'], start=1):
                 start = timedelta(seconds=segment['start'])
                 end = timedelta(seconds=segment['end'])
-                # Use translated text if available, otherwise use transcribed text
+                
+                # Stop at cut_off_time if specified
+                if cut_off_time and segment['start'] >= cut_off_time:
+                    break
+                
+                # Truncate segment if it extends beyond cut_off_time
+                if cut_off_time and segment['end'] > cut_off_time:
+                    end = timedelta(seconds=cut_off_time)
+                
                 segment_text = segment['text'].strip()
                 srt_subtitles.append(srt.Subtitle(i, start, end, segment_text))
 
