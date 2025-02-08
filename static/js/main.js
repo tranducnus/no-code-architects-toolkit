@@ -192,12 +192,19 @@ document.addEventListener('DOMContentLoaded', function() {
         transcriptText.value = 'Generating transcript...';
 
         try {
-            const formData = new FormData();
-            formData.append('video', selectedVideo);
-
-            const response = await fetch('/upload', {
+            const response = await fetch('/v1/media/transcribe', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                    task: 'transcribe',
+                    include_text: true,
+                    include_srt: false,
+                    include_segments: false,
+                    response_type: 'direct'
+                })
             });
 
             if (!response.ok) {
@@ -205,14 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await response.json();
-            if (data.job_id) {
-                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
-                if (!transcriptResponse.ok) {
-                    throw new Error('Failed to fetch transcript');
-                }
-                const transcriptData = await transcriptResponse.text();
-                transcriptText.value = transcriptData;
-            }
+            transcriptText.value = data.text || 'No transcript generated';
+
         } catch (error) {
             console.error('Transcription error:', error);
             transcriptText.value = 'Error generating transcript';
