@@ -197,8 +197,10 @@ function showSection(sectionId) {
         try {
             const formData = new FormData();
             formData.append('video', selectedVideo);
+            formData.append('output_format', 'srt'); // Can be 'srt' or 'vtt'
+            formData.append('language', 'auto');
             
-            const response = await fetch('/upload', {
+            const response = await fetch('/v1/media/generate-srt', {
                 method: 'POST',
                 body: formData
             });
@@ -216,11 +218,12 @@ function showSection(sectionId) {
                 }
                 const transcriptData = await transcriptResponse.text();
                 transcriptText.value = transcriptData;
+                document.getElementById('previewBtn').disabled = false;
                 progressBar.style.width = '100%';
             }
         } catch (error) {
             console.error('Transcription error:', error);
-            transcriptText.value = 'Error generating transcript';
+            transcriptText.value = 'Error generating transcript. Please try again.';
         } finally {
             if (processingInterval) {
                 clearInterval(processingInterval);
