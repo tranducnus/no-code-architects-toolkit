@@ -1,11 +1,11 @@
 import os
 import whisper
 import srt
+import re
 from datetime import timedelta
 from whisper.utils import WriteSRT, WriteVTT
 from services.file_management import download_file
 import logging
-import uuid
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -14,7 +14,43 @@ logging.basicConfig(level=logging.INFO)
 # Set the default local storage directory
 STORAGE_PATH = "/tmp/"
 
-def process_transcription(media_url, output_type, max_chars=56, language=None, style_settings=None):
+def extract_srt_portion(transcription_text):
+    """
+    Extracts only the SRT formatted portions from transcription output.
+
+    Args:
+        transcription_text (str): Full transcription text including SRT portions
+
+    Returns:
+        str: Extracted SRT content
+    """
+    # Regular expression to match timestamp lines
+    timestamp_pattern = r'\[(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})\](.*?)(?=\[\d{2}:\d{2}\.\d{3} -->|\Z)'
+
+    # Find all matches in the text
+    matches = re.finditer(timestamp_pattern, transcription_text, re.DOTALL)
+
+    srt_parts = []
+    for i, match in enumerate(matches, 1):
+        start_time = match.group(1)
+        end_time = match.group(2)
+        text = match.group(3).strip()
+
+        # Convert to SRT format (add hours and change decimal separator)
+        start_time = '00:' + start_time.replace('.', ',')
+        end_time = '00:' + end_time.replace('.', ',')
+
+        # Format as SRT entry
+        srt_parts.extend([
+            str(i),
+            f"{start_time} --> {end_time}",
+            text,
+            ''  # Empty line between entries
+        ])
+
+    return '\n'.join(srt_parts).strip()
+
+def process_transcription(media_url, output_type='transcript', max_chars=56, language=None, style_settings=None):
     """Transcribe media and return the transcript, SRT or ASS file path."""
     logger.info(f"Starting transcription for media URL: {media_url} with output type: {output_type}")
     input_filename = download_file(media_url, os.path.join(STORAGE_PATH, 'input_media'))
@@ -24,33 +60,22 @@ def process_transcription(media_url, output_type, max_chars=56, language=None, s
         model = whisper.load_model("base")
         logger.info("Loaded Whisper model")
 
-        # result = model.transcribe(input_filename)
-        # logger.info("Transcription completed")
+        result = model.transcribe(input_filename, language=language)
+        logger.info("Transcription completed")
 
         if output_type == 'transcript':
-            result = model.transcribe(input_filename, language=language)
             output = result['text']
             logger.info("Generated transcript output")
-        elif output_type in ['srt', 'vtt']:
-
-            result = model.transcribe(input_filename)
+        elif output_type == 'srt':
             srt_subtitles = []
             for i, segment in enumerate(result['segments'], start=1):
                 start = timedelta(seconds=segment['start'])
                 end = timedelta(seconds=segment['end'])
                 text = segment['text'].strip()
                 srt_subtitles.append(srt.Subtitle(i, start, end, text))
-            
-            output_content = srt.compose(srt_subtitles)
-            
-            # Write the output to a file
-            output_filename = os.path.join(STORAGE_PATH, f"{uuid.uuid4()}.{output_type}")
-            with open(output_filename, 'w') as f:
-                f.write(output_content)
-            
-            output = output_filename
-            logger.info(f"Generated {output_type.upper()} output: {output}")
 
+            output = srt.compose(srt_subtitles)
+            logger.info("Generated SRT output")
         elif output_type == 'ass':
             result = model.transcribe(
                 input_filename,
@@ -63,12 +88,10 @@ def process_transcription(media_url, output_type, max_chars=56, language=None, s
             ass_content = generate_ass_subtitle(result, max_chars)
             logger.info("Generated ASS subtitle content")
             
-            output_content = ass_content
-
             # Write the ASS content to a file
             output_filename = os.path.join(STORAGE_PATH, f"{uuid.uuid4()}.{output_type}")
             with open(output_filename, 'w') as f:
-               f.write(output_content) 
+               f.write(ass_content) 
             output = output_filename
             logger.info(f"Generated {output_type.upper()} output: {output}")
         else:
@@ -157,36 +180,3 @@ def generate_ass_subtitle(result, max_chars):
                 ass_content += f"Dialogue: 0,{start},{end},Default,,0,0,0,,{caption_with_highlight}\n"
 
     return ass_content
-def extract_srt_portion(transcription_text):
-    """
-    Extracts only the SRT formatted portions from transcription output.
-    
-    Args:
-        transcription_text (str): Full transcription text including SRT portions
-        
-    Returns:
-        str: Extracted SRT content
-    """
-    import re
-    
-    # Regular expression to match timestamp lines
-    timestamp_pattern = r'\[(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})\](.*?)(?=\[\d{2}:\d{2}\.\d{3} -->|\Z)'
-    
-    # Find all matches in the text
-    matches = re.finditer(timestamp_pattern, transcription_text, re.DOTALL)
-    
-    srt_parts = []
-    for i, match in enumerate(matches, 1):
-        start_time = '00:' + match.group(1).replace('.', ',')
-        end_time = '00:' + match.group(2).replace('.', ',')
-        text = match.group(3).strip()
-        
-        # Format as SRT entry
-        srt_parts.extend([
-            str(i),
-            f"{start_time} --> {end_time}",
-            text,
-            ''
-        ])
-    
-    return '\n'.join(srt_parts).strip()
