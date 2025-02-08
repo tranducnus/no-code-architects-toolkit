@@ -58,9 +58,9 @@ def create_app():
                 data = request.json if request.is_json else {}
                 pid = os.getpid()  # Get PID for non-queued tasks
                 start_time = time.time()
-
+                
                 if bypass_queue or 'webhook_url' not in data:
-
+                    
                     response = f(job_id=job_id, data=data, *args, **kwargs)
                     run_time = time.time() - start_time
                     return {
@@ -89,9 +89,9 @@ def create_app():
                             "queue_length": task_queue.qsize(),
                             "build_number": BUILD_NUMBER  # Add build number to response
                         }, 429
-
+                    
                     task_queue.put((job_id, data, lambda: f(job_id=job_id, data=data, *args, **kwargs), start_time))
-
+                    
                     return {
                         "code": 202,
                         "id": data.get("id"),
@@ -118,7 +118,7 @@ def create_app():
     from routes.caption_video import caption_bp 
     from routes.extract_keyframes import extract_keyframes_bp
     from routes.image_to_video import image_to_video_bp
-
+    
 
     # Register blueprints
     app.register_blueprint(convert_bp)
@@ -130,14 +130,13 @@ def create_app():
     app.register_blueprint(caption_bp)
     app.register_blueprint(extract_keyframes_bp)
     app.register_blueprint(image_to_video_bp)
-
-
+    
+    
 
     # version 1.0
     from routes.v1.ffmpeg.ffmpeg_compose import v1_ffmpeg_compose_bp
     from routes.v1.media.media_transcribe import v1_media_transcribe_bp
     from routes.v1.media.transform.media_to_mp3 import v1_media_transform_mp3_bp
-    from routes.v1.media.generate_srt import v1_media_srt_bp # Added SRT blueprint import
     from routes.v1.video.concatenate import v1_video_concatenate_bp
     from routes.v1.video.caption_video import v1_video_caption_bp
     from routes.v1.image.transform.image_to_video import v1_image_transform_video_bp
@@ -148,7 +147,6 @@ def create_app():
     app.register_blueprint(v1_ffmpeg_compose_bp)
     app.register_blueprint(v1_media_transcribe_bp)
     app.register_blueprint(v1_media_transform_mp3_bp)
-    app.register_blueprint(v1_media_srt_bp) # Added SRT blueprint registration
     app.register_blueprint(v1_video_concatenate_bp)
     app.register_blueprint(v1_video_caption_bp)
     app.register_blueprint(v1_image_transform_video_bp)
