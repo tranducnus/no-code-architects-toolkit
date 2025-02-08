@@ -1,10 +1,9 @@
-
 function addVideoToGrid(videoName) {
     const grid = document.querySelector('.existing-videos .video-grid');
     const videoCard = document.createElement('div');
     videoCard.className = 'video-card';
     videoCard.dataset.video = videoName;
-    
+
     videoCard.innerHTML = `
         <video class="video-preview">
             <source src="/static/uploaded/${videoName}" type="video/mp4">
@@ -14,11 +13,11 @@ function addVideoToGrid(videoName) {
             <button class="select-btn">Select</button>
         </div>
     `;
-    
+
     videoCard.querySelector('.select-btn').addEventListener('click', () => {
         selectVideo(videoName, videoCard);
     });
-    
+
     grid.appendChild(videoCard);
 }
 
@@ -26,7 +25,7 @@ function addProcessedVideo(videoPath) {
     const grid = document.querySelector('.output-section .video-grid');
     const videoCard = document.createElement('div');
     videoCard.className = 'video-card';
-    
+
     videoCard.innerHTML = `
         <video class="video-preview" controls>
             <source src="${videoPath}" type="video/mp4">
@@ -36,7 +35,7 @@ function addProcessedVideo(videoPath) {
             <a href="${videoPath}" download class="download-btn">Download</a>
         </div>
     `;
-    
+
     grid.appendChild(videoCard);
 }
 
@@ -239,6 +238,24 @@ async function checkStatus(jobId, progressBar) {
                 if (previewVideo) previewVideo.src = data.url;
                 if (videoResult) videoResult.style.display = 'block';
                 if (processingProgress) processingProgress.style.display = 'none';
+
+                // Refresh the processed videos section
+                const processedVideosContainer = document.querySelector('.output-section .video-grid');
+                if (processedVideosContainer) {
+                    const videoCard = document.createElement('div');
+                    videoCard.className = 'video-card';
+                    const filename = data.url.split('/').pop();
+                    videoCard.innerHTML = `
+                        <video class="video-preview" controls>
+                            <source src="${data.url}" type="video/mp4">
+                        </video>
+                        <div class="video-info">
+                            <span class="video-name">${filename}</span>
+                            <a href="${data.url}" download class="download-btn">Download</a>
+                        </div>
+                    `;
+                    processedVideosContainer.appendChild(videoCard);
+                }
                 break;
             } else if (data.status === 'failed') {
                 throw new Error(data.error || 'Processing failed');
