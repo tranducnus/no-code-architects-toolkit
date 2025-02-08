@@ -1,53 +1,9 @@
-
-from flask import Blueprint
-from app_utils import validate_payload, queue_task_wrapper
+from flask import Blueprint, jsonify, request
+from app_utils import validate_payload
 import logging
 from services.v1.media.media_transcribe import process_transcription
 from services.authentication import authenticate
-from services.cloud_storage import upload_file
-
-v1_media_srt_bp = Blueprint('v1_media_srt', __name__)
-logger = logging.getLogger(__name__)
-
-@v1_media_srt_bp.route('/v1/media/generate-srt', methods=['POST'])
-@authenticate
-@validate_payload({
-    "type": "object",
-    "properties": {
-        "media_url": {"type": "string", "format": "uri"},
-        "language": {"type": "string"},
-        "webhook_url": {"type": "string", "format": "uri"},
-        "id": {"type": "string"}
-    },
-    "required": ["media_url"],
-    "additionalProperties": False
-})
-@queue_task_wrapper(bypass_queue=False)
-def generate_srt(job_id, data):
-    media_url = data['media_url']
-    language = data.get('language', 'auto')
-    webhook_url = data.get('webhook_url')
-    id = data.get('id')
-
-    logger.info(f"Job {job_id}: Received SRT generation request for {media_url}")
-
-    try:
-        result = process_transcription(media_url, output_type='srt')
-        logger.info(f"Job {job_id}: SRT generation completed successfully")
-
-        cloud_url = upload_file(result)
-        logger.info(f"Job {job_id}: SRT file uploaded to cloud storage: {cloud_url}")
-
-        return cloud_url, "/v1/media/generate-srt", 200
-
-    except Exception as e:
-        logger.error(f"Job {job_id}: Error during SRT generation - {str(e)}")
-        return str(e), "/v1/media/generate-srt", 500
-from flask import Blueprint, jsonify
-from app_utils import validate_payload, queue_task_wrapper
-import logging
-from services.transcription import process_transcription
-from services.authentication import authenticate
+import os
 
 v1_media_srt_bp = Blueprint('v1_media_srt', __name__)
 logger = logging.getLogger(__name__)
@@ -63,41 +19,33 @@ logger = logging.getLogger(__name__)
     "required": ["media_url"],
     "additionalProperties": False
 })
-@queue_task_wrapper(bypass_queue=False)
-def generate_srt(job_id, data):
+def generate_srt():
     """Generate SRT file from media."""
-    media_url = data['media_url']
-    language = data.get('language')
-
-    logger.info(f"Job {job_id}: Received SRT generation request for {media_url}")
-
     try:
+        data = request.get_json()
+        media_url = data['media_url']
+        language = data.get('language')
+
+        logger.info(f"Received SRT generation request for {media_url}")
+
         if not media_url:
             raise ValueError("No media URL provided")
-            
-        logger.info(f"Job {job_id}: Processing media from {media_url}")
-        result = process_transcription(media_url, output_type='srt', language=language)
-        
-        if not result or not os.path.exists(result):
-            raise FileNotFoundError("Generated SRT file not found")
-            
-        logger.info(f"Job {job_id}: SRT generation completed successfully")
 
-        # Read the generated SRT content
-        with open(result, 'r') as f:
-            srt_content = f.read()
-            
-        if not srt_content:
-            raise ValueError("Generated SRT content is empty")
-            
+        logger.info(f"Processing media from {media_url}")
+        result = process_transcription(media_url, output_type='srt', language=language)
+
+        if not result:
+            raise ValueError("No SRT content generated")
+
+        logger.info(f"SRT generation completed successfully")
+
         return jsonify({
-            "job_id": job_id,
             "status": "completed",
-            "srt": srt_content
+            "srt": result
         }), 200
 
     except Exception as e:
-        error_msg = f"Job {job_id}: Error during SRT generation - {str(e)}"
+        error_msg = f"Error during SRT generation - {str(e)}"
         logger.error(error_msg)
         return jsonify({
             "error": str(e),

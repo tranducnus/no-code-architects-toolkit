@@ -195,20 +195,13 @@ function showSection(sectionId) {
         progressBar.style.width = '0%';
         
         try {
-            const formData = new FormData();
-            formData.append('video', selectedVideo);
-            
-            const response = await fetch('/v1/media/transcribe', {
+            const response = await fetch('/v1/media/generate-srt', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                    include_text: false,
-                    include_srt: true,
-                    include_segments: false,
-                    response_type: 'direct'
+                    media_url: `/static/uploaded/${selectedVideo}`
                 })
             });
             
