@@ -81,26 +81,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function selectVideo(videoName, card) {
-    document.querySelectorAll('.video-card').forEach(c =>
-        c.classList.remove('selected'));
-    if (card) card.classList.add('selected');
-    selectedVideo = videoName;
-    const previewVideo = document.getElementById('previewVideo');
-    if (previewVideo) {
-        previewVideo.src = `/static/uploaded/${videoName}`;
+        document.querySelectorAll('.video-card').forEach(c =>
+            c.classList.remove('selected'));
+        if (card) card.classList.add('selected');
+        selectedVideo = videoName;
+        const previewVideo = document.getElementById('previewVideo');
+        if (previewVideo) {
+            previewVideo.src = `/static/uploaded/${videoName}`;
+        }
+        showSection('editorSection');
+        // Reset transcription state
+        document.getElementById('transcriptText').value = '';
+        document.getElementById('previewBtn').disabled = true;
     }
-    showSection('editorSection');
-    // Reset transcription state
-    document.getElementById('transcriptText').value = '';
-    document.getElementById('previewBtn').disabled = true;
-}
 
-function showSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    if (section) {
-        section.style.display = 'block';
+    function showSection(sectionId) {
+        const section = document.getElementById(sectionId);
+        if (section) {
+            section.style.display = 'block';
+        }
     }
-}
 
     // Process video
     processButton.addEventListener('click', async () => {
@@ -178,55 +178,13 @@ function showSection(sectionId) {
             };
             captionPreview.style.top = positions[position.split('_')[0]];
 
-    }
+        }
     }
 
     // Handle transcript generation
     // Generate SRT button handler
-    document.getElementById('generateSrtBtn').addEventListener('click', async () => {
-        if (!selectedVideo) {
-            alert('Please select a video first');
-            return;
-        }
-        
-        const generateSrtBtn = document.getElementById('generateSrtBtn');
-        generateSrtBtn.disabled = true;
-        transcriptText.value = 'Generating SRT...';
-        processingProgress.style.display = 'block';
-        const progressBar = processingProgress.querySelector('.progress-bar-fill');
-        progressBar.style.width = '0%';
-        
-        try {
-            const formData = new FormData();
-            formData.append('video', selectedVideo);
-            formData.append('output', 'srt');
-            
-            const response = await fetch('/v1/media/generate-srt', {
-                method: 'POST',
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            if (data.result) {
-                transcriptText.value = data.result;
-                progressBar.style.width = '100%';
-            }
-        } catch (error) {
-            console.error('SRT generation error:', error);
-            transcriptText.value = 'Error generating SRT';
-        } finally {
-            generateSrtBtn.disabled = false;
-            processingProgress.style.display = 'none';
-        }
+    document.getElementById('generateSrtBtn').addEventListener('click', () => {
+        generateSrtAndAss();
     });
 
     generateTranscriptBtn.addEventListener('click', async () => {
@@ -234,22 +192,22 @@ function showSection(sectionId) {
             alert('Please select a video first');
             return;
         }
-        
+
         generateTranscriptBtn.disabled = true;
         transcriptText.value = 'Generating transcript...';
         processingProgress.style.display = 'block';
         const progressBar = processingProgress.querySelector('.progress-bar-fill');
         progressBar.style.width = '0%';
-        
+
         try {
             const formData = new FormData();
             formData.append('video', selectedVideo);
-            
+
             const response = await fetch('/upload', {
                 method: 'POST',
                 body: formData
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -301,6 +259,11 @@ function showSection(sectionId) {
             `${transcriptTiming[index] > 0 ? '+' : ''}${transcriptTiming[index]}s`;
     }
 
+    async function generateSrtAndAss() {
+        // Placeholder implementation.  Replace with actual SRT and ASS generation logic.
+        console.log("Generating SRT and ASS files...");
+        alert("SRT and ASS generation not yet implemented.");
+    }
 });
 
 async function checkStatus(jobId, progressBar) {
