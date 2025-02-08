@@ -198,9 +198,14 @@ function showSection(sectionId) {
             const formData = new FormData();
             formData.append('media_url', `/static/uploaded/${selectedVideo}`);
             formData.append('output', 'srt');
+            formData.append('task', 'transcribe');
+            formData.append('language', 'auto');
             
             const response = await fetch('/transcribe-media', {
                 method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + getAuthToken()
+                },
                 body: formData
             });
             
