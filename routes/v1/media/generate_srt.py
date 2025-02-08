@@ -9,7 +9,7 @@ import os
 v1_media_srt_bp = Blueprint('v1_media_srt', __name__)
 logger = logging.getLogger(__name__)
 
-@v1_media_srt_bp.route('/v1/media/generate-srt-video', methods=['POST'])
+@v1_media_srt_bp.route('/api/v1/media/generate-srt-video', methods=['POST'])
 @authenticate
 @validate_payload({
     "type": "object",
