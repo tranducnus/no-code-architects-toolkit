@@ -190,44 +190,43 @@ function showSection(sectionId) {
         
         generateTranscriptBtn.disabled = true;
         transcriptText.value = 'Generating transcript...';
-        const progressBar = processingProgress.querySelector('.progress-bar-fill');
         processingProgress.style.display = 'block';
+        const progressBar = processingProgress.querySelector('.progress-bar-fill');
         progressBar.style.width = '0%';
         
         try {
             const formData = new FormData();
-            formData.append('media_url', `/static/uploaded/${selectedVideo}`);
-            formData.append('output', 'transcript');
-            formData.append('task', 'transcribe');
-            formData.append('language', 'auto');
+            formData.append('video', selectedVideo);
             
-            const response = await fetch('/transcribe-media', {
+            const response = await fetch('/upload', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                    output: 'transcript',
-                    task: 'transcribe',
-                    language: 'auto'
-                })
+                body: formData
             });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const result = await response.text();
-            transcriptText.value = result;
-            progressBar.style.width = '100%';
+
+            const data = await response.json();
+            if (data.job_id) {
+                await checkStatus(data.job_id, progressBar);
+                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
+                if (!transcriptResponse.ok) {
+                    throw new Error('Failed to fetch transcript');
+                }
+                const transcriptData = await transcriptResponse.text();
+                transcriptText.value = transcriptData;
+                progressBar.style.width = '100%';
+            }
         } catch (error) {
             console.error('Transcription error:', error);
             transcriptText.value = 'Error generating transcript';
         } finally {
+            if (processingInterval) {
+                clearInterval(processingInterval);
+            }
             generateTranscriptBtn.disabled = false;
-            setTimeout(() => {
-                processingProgress.style.display = 'none';
-            }, 1000);
+            processingProgress.style.display = 'none';
         }
     });
 
