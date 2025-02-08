@@ -1,3 +1,45 @@
+
+function addVideoToGrid(videoName) {
+    const grid = document.querySelector('.existing-videos .video-grid');
+    const videoCard = document.createElement('div');
+    videoCard.className = 'video-card';
+    videoCard.dataset.video = videoName;
+    
+    videoCard.innerHTML = `
+        <video class="video-preview">
+            <source src="/static/uploaded/${videoName}" type="video/mp4">
+        </video>
+        <div class="video-info">
+            <span class="video-name">${videoName}</span>
+            <button class="select-btn">Select</button>
+        </div>
+    `;
+    
+    videoCard.querySelector('.select-btn').addEventListener('click', () => {
+        selectVideo(videoName, videoCard);
+    });
+    
+    grid.appendChild(videoCard);
+}
+
+function addProcessedVideo(videoPath) {
+    const grid = document.querySelector('.output-section .video-grid');
+    const videoCard = document.createElement('div');
+    videoCard.className = 'video-card';
+    
+    videoCard.innerHTML = `
+        <video class="video-preview" controls>
+            <source src="${videoPath}" type="video/mp4">
+        </video>
+        <div class="video-info">
+            <span class="video-name">${videoPath.split('/').pop()}</span>
+            <a href="${videoPath}" download class="download-btn">Download</a>
+        </div>
+    `;
+    
+    grid.appendChild(videoCard);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const dropzone = document.getElementById('dropzone');
     const videoInput = document.getElementById('videoInput');
@@ -57,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const data = await response.json();
             if (data.success) {
-                location.reload(); // Refresh to show new video
+                addVideoToGrid(data.video_path);
             } else {
                 throw new Error(data.error || 'Upload failed');
             }
