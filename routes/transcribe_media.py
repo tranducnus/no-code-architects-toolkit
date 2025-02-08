@@ -14,11 +14,13 @@ logger = logging.getLogger(__name__)
 @validate_payload({
     "type": "object",
     "properties": {
-        "media_url": {"type": "string", "format": "uri"},
-        "output": {"type": "string", "enum": ["transcript", "srt", "vtt"]},
-        "language": {"type": "string"}
+        "media_url": {"type": "string"},
+        "output": {"type": "string", "enum": ["transcript", "srt", "vtt", "ass"]},
+        "webhook_url": {"type": "string", "format": "uri"},
+        "max_chars": {"type": "integer"},
+        "id": {"type": "string"}
     },
-    "required": ["media_url", "output"],
+    "required": ["media_url"],
     "additionalProperties": False
 })
 @queue_task_wrapper(bypass_queue=False)
@@ -35,25 +37,13 @@ def transcribe(job_id, data):
         result = process_transcription(media_url, output, max_chars)
         logger.info(f"Job {job_id}: Transcription process completed successfully")
 
-        # For all formats, return the content directly
+        # If the result is a file path, upload it using the unified upload_file() method
         if output in ['srt', 'vtt', 'ass']:
-            with open(result, 'r') as f:
-                content = f.read()
-            os.remove(result)  # Clean up the temporary file
-            return {
-                "job_id": job_id,
-                "status": "completed", 
-                "result": content,
-                "type": output
-            }, 200
+            cloud_url = upload_file(result)
+            os.remove(result)  # Remove the temporary file after uploading
+            return cloud_url, "/transcribe-media", 200
         else:
-            # For plain transcript
-            return {
-                "job_id": job_id,
-                "status": "completed",
-                "result": result,
-                "type": "transcript"
-            }, 200
+            return {"transcript": result}, 200
         
     except Exception as e:
         logger.error(f"Job {job_id}: Error during transcription process - {str(e)}")
