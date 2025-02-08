@@ -81,50 +81,72 @@
 
                 <div class="editor-section">
                     <button id="applyStyles" class="primary-button">Apply Styles</button>
-                    <button id="processVideo" class="primary-button">Process Video</button>
-                </div>
+                    </div>
             </div>
         </div>
-
         <div class="main-content">
-            <div class="video-preview">
-                <div id="uploadSection">
-                    <h2>Upload Video</h2>
-                    <form id="uploadForm">
-                        <input type="file" name="video" accept="video/*">
-                        <button type="submit">Upload New Video</button>
+            <div class="section upload-section">
+                <h2>Upload or Select Video</h2>
+                <div class="upload-area">
+                    <form id="uploadForm" class="upload-form">
+                        <div class="file-input-wrapper">
+                            <input type="file" name="video" accept="video/*" id="videoInput">
+                            <label for="videoInput" class="file-input-label">Choose a file</label>
+                        </div>
+                        <button type="submit" class="primary-button">Upload</button>
                     </form>
-                    
-                    <h3>Or Select Existing Video</h3>
-                    <select id="existingVideos" class="style-input">
-                        <option value="">Select a video</option>
-                        {% for video in uploaded_videos %}
-                            <option value="{{ video }}">{{ video }}</option>
-                        {% endfor %}
-                    </select>
-                    <button id="selectExisting" class="primary-button">Use Selected Video</button>
                 </div>
 
+                <div class="existing-videos">
+                    <h3>Existing Videos</h3>
+                    <div class="video-grid">
+                        {% for video in uploaded_videos %}
+                        <div class="video-thumbnail" data-video="{{ video }}">
+                            <video class="thumbnail-preview">
+                                <source src="{{ url_for('static', filename='uploaded/' + video) }}" type="video/mp4">
+                            </video>
+                            <div class="video-name">{{ video }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="section process-section">
                 <div id="previewContainer" style="display: none;">
                     <video id="videoPreview" controls>
                         Your browser does not support the video tag.
                     </video>
-                    <div id="captionPreview"></div>
-                    <input type="hidden" id="video_path" name="video_path">
+                    <button id="processVideo" class="primary-button">Process Video</button>
                 </div>
+            </div>
 
-                <div id="processingProgress" class="loading" style="display: none;">
-                    <div class="spinner"></div>
-                    <div class="status-message">Processing video...</div>
-                    <div class="progress-bar">
-                        <div class="progress-bar-fill"></div>
+            <div class="section output-section">
+                <h2>Processed Videos</h2>
+                <div class="video-grid processed-videos">
+                    {% for video in processed_videos %}
+                    <div class="video-thumbnail">
+                        <video class="thumbnail-preview" controls>
+                            <source src="{{ url_for('static', filename='processed/' + video) }}" type="video/mp4">
+                        </video>
+                        <div class="video-name">{{ video }}</div>
                     </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div id="processingProgress" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <div class="status-message">Processing video...</div>
+                <div class="progress-bar">
+                    <div class="progress-bar-fill"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="errorMessage" class="error-message"></div>
+    <input type="hidden" id="video_path" name="video_path">
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

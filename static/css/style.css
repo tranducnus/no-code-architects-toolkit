@@ -33,29 +33,110 @@
     transition: all 0.3s ease;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Arial', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 .app-container {
-    display: flex;
     min-height: 100vh;
-    background: #f5f5f5;
-}
-
-.sidebar {
-    width: 320px;
-    background: white;
-    padding: 20px;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    background: #f8fafc;
+    padding: 2rem;
 }
 
 .main-content {
-    flex: 1;
-    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.upload-area {
+    border: 2px dashed #e2e8f0;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.file-input-wrapper {
+    margin-bottom: 1rem;
+}
+
+.file-input-label {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #f1f5f9;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.file-input-label:hover {
+    background: #e2e8f0;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.video-thumbnail {
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f1f5f9;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.video-thumbnail:hover {
+    transform: translateY(-2px);
+}
+
+.thumbnail-preview {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+}
+
+.video-name {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    color: #475569;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.primary-button {
+    background: #3b82f6;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.primary-button:hover {
+    background: #2563eb;
 }
 
 .video-preview {
