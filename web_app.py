@@ -91,24 +91,24 @@ def process_video(job_id, video_path, form_data):
     try:
         if not os.path.exists(video_path):
             raise FileNotFoundError("Upload file not found")
-            
+
         output_type = form_data.get('output_type', 'video')
-        
+
         if output_type == 'srt':
             from services.transcription import process_transcription
             import shutil
-            
+
             # Generate SRT file
             srt_output = process_transcription(video_path, 'srt')
-            
+
             # Move to permanent storage
             srt_filename = f"{job_id}.srt"
             static_srt_path = os.path.join('static', 'transcripted', srt_filename)
             shutil.copy2(srt_output, static_srt_path)
-            
-            # Remove temporary file
-            os.remove(srt_output)
-            
+
+
+            logger.info(f"Transcription successful, output type: {output_type}")
+
             JOBS[job_id] = {
                 'status': 'completed',
                 'transcript': f'/static/transcripted/{srt_filename}'
