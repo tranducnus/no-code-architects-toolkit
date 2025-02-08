@@ -118,7 +118,7 @@ def process_video(job_id, video_path, form_data):
 
         JOBS[job_id] = {
             'status': 'completed',
-            'url': f'/static/uploads/{output_filename}'
+            'url': f'/static/processed/{output_filename}'
         }
         print(f"Job {job_id} completed. Status updated in JOBS dictionary.")
 
