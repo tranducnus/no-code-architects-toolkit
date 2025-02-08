@@ -2,9 +2,9 @@ import os
 import whisper
 import srt
 from datetime import timedelta
-from whisper.utils import WriteSRT, WriteVTT
 from services.file_management import download_file
 import logging
+import uuid
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -12,6 +12,36 @@ logging.basicConfig(level=logging.INFO)
 
 # Set the default local storage directory
 STORAGE_PATH = "/tmp/"
+
+def process_srt(media_url):
+    """Generate SRT file from video using Whisper."""
+    try:
+        logger.info(f"Starting download of file from {media_url}")
+        input_filename = download_file(media_url, STORAGE_PATH)
+        logger.info(f"File downloaded to {input_filename}")
+
+        model = whisper.load_model("base")
+        result = model.transcribe(input_filename)
+
+        srt_subtitles = []
+        for i, segment in enumerate(result['segments'], start=1):
+            start = timedelta(seconds=segment['start'])
+            end = timedelta(seconds=segment['end'])
+            text = segment['text'].strip()
+            srt_subtitles.append(srt.Subtitle(i, start, end, text))
+
+        output_content = srt.compose(srt_subtitles)
+
+        # Generate unique filename
+        output_filename = os.path.join(STORAGE_PATH, f"{uuid.uuid4()}.srt")
+        with open(output_filename, 'w') as f:
+            f.write(output_content)
+
+        return output_filename
+
+    except Exception as e:
+        logger.error(f"SRT generation failed: {str(e)}")
+        raise
 
 def process_transcribe_media(media_url, task, include_text, include_srt, include_segments, word_timestamps, response_type, language, job_id):
     """Transcribe or translate media and return the transcript/translation, SRT or VTT file path."""
@@ -38,7 +68,7 @@ def process_transcribe_media(media_url, task, include_text, include_srt, include
             options["language"] = language
 
         result = model.transcribe(input_filename, **options)
-        
+
         # For translation task, the result['text'] will be in English
         text = None
         srt_text = None
@@ -57,7 +87,7 @@ def process_transcribe_media(media_url, task, include_text, include_srt, include
                 # Use translated text if available, otherwise use transcribed text
                 segment_text = segment['text'].strip()
                 srt_subtitles.append(srt.Subtitle(i, start, end, segment_text))
-            
+
             srt_text = srt.compose(srt_subtitles)
 
         if include_segments is True:
@@ -70,14 +100,14 @@ def process_transcribe_media(media_url, task, include_text, include_srt, include
         if response_type == "direct":
             return text, srt_text, segments_json
         else:
-            
+
             if include_text is True:
                 text_filename = os.path.join(STORAGE_PATH, f"{job_id}.txt")
                 with open(text_filename, 'w') as f:
                     f.write(text)
             else:
                 text_file = None
-            
+
             if include_srt is True:
                 srt_filename = os.path.join(STORAGE_PATH, f"{job_id}.srt")
                 with open(srt_filename, 'w') as f:

@@ -10,14 +10,11 @@ v1_media_srt_bp = Blueprint('v1_media_srt', __name__)
 logger = logging.getLogger(__name__)
 
 @v1_media_srt_bp.route('/v1/media/generate-srt', methods=['POST'])
-@authenticate
 @validate_payload({
     "type": "object",
     "properties": {
-        "media_url": {"type": "string", "format": "uri"},
-        "language": {"type": "string"},
-        "webhook_url": {"type": "string", "format": "uri"},
-        "id": {"type": "string"}
+        "media_url": {"type": "string"},
+        "language": {"type": "string"}
     },
     "required": ["media_url"],
     "additionalProperties": False
