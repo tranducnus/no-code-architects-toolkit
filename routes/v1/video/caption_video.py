@@ -92,10 +92,10 @@ def caption_video_v1(job_id, data):
         # Do NOT combine position and alignment. Keep them separate.
         # Just pass settings directly to process_captioning_v1.
         # This ensures position and alignment remain independent keys.
-        
+
         # Process video with the enhanced v1 service
         output = process_captioning_v1(video_url, captions, settings, replace, job_id, language)
-        
+
         if isinstance(output, dict) and 'error' in output:
             # Check if this is a font-related error by checking for 'available_fonts' key
             if 'available_fonts' in output:
@@ -109,15 +109,18 @@ def caption_video_v1(job_id, data):
         output_path = output
         logger.info(f"Job {job_id}: Captioning process completed successfully")
 
-        # Upload the captioned video
-        cloud_url = upload_file(output_path)
-        logger.info(f"Job {job_id}: Captioned video uploaded to cloud storage: {cloud_url}")
 
-        # Clean up the output file after upload
+        # Instead of generating video, just return the subtitle file
+        logger.info(f"Job {job_id}: Subtitle file generated at {output_path}")
+
+        # Read subtitle content
+        with open(output_path, 'r') as f:
+            subtitle_content = f.read()
+
+        # Clean up temporary files
         os.remove(output_path)
-        logger.info(f"Job {job_id}: Cleaned up local output file")
 
-        return cloud_url, "/v1/video/caption", 200
+        return {"job_id": job_id, "subtitle_content": subtitle_content}, "/v1/video/caption", 200
 
     except Exception as e:
         logger.error(f"Job {job_id}: Error during captioning process - {str(e)}", exc_info=True)
