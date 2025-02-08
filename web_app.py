@@ -96,10 +96,22 @@ def process_video(job_id, video_path, form_data):
         
         if output_type == 'srt':
             from services.transcription import process_transcription
+            import shutil
+            
+            # Generate SRT file
             srt_output = process_transcription(video_path, 'srt')
+            
+            # Move to permanent storage
+            srt_filename = f"{job_id}.srt"
+            static_srt_path = os.path.join('static', 'transcripted', srt_filename)
+            shutil.copy2(srt_output, static_srt_path)
+            
+            # Remove temporary file
+            os.remove(srt_output)
+            
             JOBS[job_id] = {
                 'status': 'completed',
-                'transcript': srt_output
+                'transcript': f'/static/transcripted/{srt_filename}'
             }
             return
 
