@@ -7,6 +7,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const processingProgress = document.getElementById('processingProgress');
     const uploadForm = document.getElementById('uploadForm');
     let selectedVideo = null;
+
+function formatTime(seconds) {
+    const pad = (num) => num.toString().padStart(2, '0');
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
+    return `${pad(mins)}:${pad(secs)}.${ms.toString().padStart(3, '0')}`;
+}
+
     let processingInterval = null;
 
     // Drag and drop functionality
@@ -199,7 +208,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     media_url: `/static/uploaded/${selectedVideo}`,
-                    output: 'transcript'
+                    task: 'transcribe',
+                    include_text: true,
+                    include_srt: false,
+                    include_segments: true
                 })
             });
 
@@ -207,8 +219,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const text = await response.text();
-            transcriptText.value = text;
+            const result = await response.json();
+            transcriptText.value = result.segments.map(segment => 
+                `[${formatTime(segment.start)} --> ${formatTime(segment.end)}] ${segment.text}`
+            ).join('\n');
         } catch (error) {
             console.error('Transcription error:', error);
             transcriptText.value = 'Error generating transcript';
