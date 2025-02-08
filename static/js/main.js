@@ -1,12 +1,3 @@
-function formatTime(seconds) {
-    const pad = (num) => num.toString().padStart(2, '0');
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    const ms = Math.floor((seconds % 1) * 1000);
-    return `${pad(hours)}:${pad(minutes)}:${pad(secs)}.${ms.toString().padStart(3, '0')}`;
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     const dropzone = document.getElementById('dropzone');
     const videoInput = document.getElementById('videoInput');
@@ -90,26 +81,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function selectVideo(videoName, card) {
-        document.querySelectorAll('.video-card').forEach(c =>
-            c.classList.remove('selected'));
-        if (card) card.classList.add('selected');
-        selectedVideo = videoName;
-        const previewVideo = document.getElementById('previewVideo');
-        if (previewVideo) {
-            previewVideo.src = `/static/uploaded/${videoName}`;
-        }
-        showSection('editorSection');
-        // Reset transcription state
-        document.getElementById('transcriptText').value = '';
-        document.getElementById('previewBtn').disabled = true;
+    document.querySelectorAll('.video-card').forEach(c =>
+        c.classList.remove('selected'));
+    if (card) card.classList.add('selected');
+    selectedVideo = videoName;
+    const previewVideo = document.getElementById('previewVideo');
+    if (previewVideo) {
+        previewVideo.src = `/static/uploaded/${videoName}`;
     }
+    showSection('editorSection');
+    // Reset transcription state
+    document.getElementById('transcriptText').value = '';
+    document.getElementById('previewBtn').disabled = true;
+}
 
-    function showSection(sectionId) {
-        const section = document.getElementById(sectionId);
-        if (section) {
-            section.style.display = 'block';
-        }
+function showSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.style.display = 'block';
     }
+}
 
     // Process video
     processButton.addEventListener('click', async () => {
@@ -187,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             captionPreview.style.top = positions[position.split('_')[0]];
 
-        }
+    }
     }
 
     // Handle transcript generation
@@ -196,32 +187,46 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Please select a video first');
             return;
         }
-
+        
         generateTranscriptBtn.disabled = true;
         transcriptText.value = 'Generating transcript...';
-
+        processingProgress.style.display = 'block';
+        const progressBar = processingProgress.querySelector('.progress-bar-fill');
+        progressBar.style.width = '0%';
+        
         try {
-            const response = await fetch('/transcribe-media', {
+            const formData = new FormData();
+            formData.append('video', selectedVideo);
+            
+            const response = await fetch('/upload', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`
-                })
+                body: formData
             });
-
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const result = await response.text();
-            transcriptText.value = result;
+            const data = await response.json();
+            if (data.job_id) {
+                await checkStatus(data.job_id, progressBar);
+                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
+                if (!transcriptResponse.ok) {
+                    throw new Error('Failed to fetch transcript');
+                }
+                const transcriptData = await transcriptResponse.text();
+                transcriptText.value = transcriptData;
+                progressBar.style.width = '100%';
+            }
         } catch (error) {
             console.error('Transcription error:', error);
             transcriptText.value = 'Error generating transcript';
         } finally {
+            if (processingInterval) {
+                clearInterval(processingInterval);
+            }
             generateTranscriptBtn.disabled = false;
+            processingProgress.style.display = 'none';
         }
     });
 

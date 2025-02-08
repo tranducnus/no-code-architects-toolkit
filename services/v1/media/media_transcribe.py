@@ -39,18 +39,29 @@ def process_transcribe_media(media_url, task, include_text, include_srt, include
 
         result = model.transcribe(input_filename, **options)
         
+        # For translation task, the result['text'] will be in English
+        text = None
+        srt_text = None
+        segments_json = None
+
         logger.info(f"Generated {task} output")
 
-        # Format segments directly with timestamps
-        formatted_transcript = []
-        for segment in result['segments']:
-            start_time = timedelta(seconds=segment['start'])
-            end_time = timedelta(seconds=segment['end'])
-            text = segment['text'].strip()
-            formatted_line = f"[{start_time} --> {end_time}] {text}"
-            formatted_transcript.append(formatted_line)
+        if include_text is True:
+            text = result['text']
+
+        if include_srt is True:
+            srt_subtitles = []
+            for i, segment in enumerate(result['segments'], start=1):
+                start = timedelta(seconds=segment['start'])
+                end = timedelta(seconds=segment['end'])
+                # Use translated text if available, otherwise use transcribed text
+                segment_text = segment['text'].strip()
+                srt_subtitles.append(srt.Subtitle(i, start, end, segment_text))
             
-        text = "\n".join(formatted_transcript)
+            srt_text = srt.compose(srt_subtitles)
+
+        if include_segments is True:
+            segments_json = result['segments']
 
         os.remove(input_filename)
         logger.info(f"Removed local file: {input_filename}")
