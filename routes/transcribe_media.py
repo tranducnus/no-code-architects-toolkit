@@ -28,6 +28,7 @@ def transcribe(data):
         input_filename = download_file(media_url, os.path.join(STORAGE_PATH, 'input_media'))
         result = model.transcribe(input_filename)
         
+        # Format transcript with timestamps
         formatted_transcript = []
         for segment in result['segments']:
             start_time = timedelta(seconds=segment['start'])
@@ -35,11 +36,10 @@ def transcribe(data):
             text = segment['text'].strip()
             formatted_line = f"[{start_time} --> {end_time}] {text}"
             formatted_transcript.append(formatted_line)
-            
+        
         os.remove(input_filename)
         transcript_text = "\n".join(formatted_transcript)
         return transcript_text, 200
-        
     except Exception as e:
         logger.error(f"Error during transcription process - {str(e)}")
         return str(e), 500

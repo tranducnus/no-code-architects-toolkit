@@ -1,4 +1,3 @@
-
 function formatTime(seconds) {
     const pad = (num) => num.toString().padStart(2, '0');
     const hours = Math.floor(seconds / 3600);
