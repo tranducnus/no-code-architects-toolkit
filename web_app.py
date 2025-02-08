@@ -3,7 +3,9 @@ from werkzeug.utils import secure_filename
 import os
 import uuid
 from services.v1.video.caption_video import process_captioning_v1
+import logging
 
+logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploaded')
 app.config['PROCESSED_FOLDER'] = os.path.join('static', 'processed')
@@ -94,12 +96,18 @@ def process_video(job_id, video_path, form_data):
 
         output_type = form_data.get('output_type', 'video')
 
+        # Create working copy of the video
+        import shutil
+        work_dir = os.path.join('static', 'processing')
+        os.makedirs(work_dir, exist_ok=True)
+        video_working_copy = os.path.join(work_dir, f"{job_id}_source.mp4")
+        shutil.copy2(video_path, video_working_copy)
+
         if output_type == 'srt':
             from services.transcription import process_transcription
-            import shutil
 
-            # Generate SRT file
-            srt_output = process_transcription(video_path, 'srt')
+            # Generate SRT file using working copy
+            srt_output = process_transcription(video_working_copy, 'srt')
 
             # Move to permanent storage
             srt_filename = f"{job_id}.srt"
@@ -129,7 +137,7 @@ def process_video(job_id, video_path, form_data):
 
         # Pass the local path directly
         output_path = process_captioning_v1(
-            video_path,
+            video_working_copy,
             form_data.get('captions', ''),
             settings,
             [],  # replace rules
