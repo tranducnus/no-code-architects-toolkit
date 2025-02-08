@@ -1,141 +1,13 @@
-
-let selectedVideo = null;
-let currentTranscript = null;
-
-// Navigation between sections
-function showSection(sectionId) {
-    ['uploadSection', 'editorSection', 'exportSection'].forEach(id => {
-        document.getElementById(id).style.display = id === sectionId ? 'block' : 'none';
-    });
-}
-
-function selectVideo(videoName, card) {
-    document.querySelectorAll('.video-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    selectedVideo = videoName;
-    
-    // Update preview video source
-    const previewVideo = document.getElementById('previewVideo');
-    previewVideo.src = `/static/uploaded/${videoName}`;
-    
-    // Move to editor section
-    showSection('editorSection');
-}
-
-async function generateTranscript() {
-    if (!selectedVideo) return;
-    
-    try {
-        const response = await fetch('/generate-transcription', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                video: selectedVideo
-            })
-        });
-
-        if (!response.ok) throw new Error('Transcription failed');
-        
-        const data = await response.json();
-        currentTranscript = data.transcript;
-        document.getElementById('transcriptText').value = currentTranscript;
-    } catch (error) {
-        console.error('Transcription error:', error);
-        alert('Failed to generate transcript: ' + error.message);
-    }
-}
-
-async function previewCaptions() {
-    if (!selectedVideo || !currentTranscript) return;
-
-    const settings = {
-        font_family: document.getElementById('fontFamily').value,
-        font_size: parseInt(document.getElementById('fontSize').value),
-        style: document.getElementById('captionStyle').value,
-        line_color: document.getElementById('textColor').value,
-        position: document.getElementById('position').value
-    };
-
-    try {
-        const response = await fetch('/preview-captions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                video: selectedVideo,
-                transcript: document.getElementById('transcriptText').value,
-                settings: settings
-            })
-        });
-
-        if (!response.ok) throw new Error('Preview failed');
-        
-        const data = await response.json();
-        document.getElementById('previewVideo').src = data.preview_url;
-    } catch (error) {
-        console.error('Preview error:', error);
-        alert('Failed to preview: ' + error.message);
-    }
-}
-
-async function exportVideo() {
-    if (!selectedVideo || !currentTranscript) return;
-    
-    const exportProgress = document.getElementById('exportProgress');
-    exportProgress.style.display = 'block';
-    
-    try {
-        const response = await fetch('/export-video', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                video: selectedVideo,
-                transcript: document.getElementById('transcriptText').value,
-                settings: {
-                    font_family: document.getElementById('fontFamily').value,
-                    font_size: parseInt(document.getElementById('fontSize').value),
-                    style: document.getElementById('captionStyle').value,
-                    line_color: document.getElementById('textColor').value,
-                    position: document.getElementById('position').value
-                }
-            })
-        });
-
-        if (!response.ok) throw new Error('Export failed');
-        
-        const data = await response.json();
-        addProcessedVideo(data.url);
-        showSection('uploadSection');
-    } catch (error) {
-        console.error('Export error:', error);
-        alert('Failed to export: ' + error.message);
-    } finally {
-        exportProgress.style.display = 'none';
-    }
-}
-
-// Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
     const dropzone = document.getElementById('dropzone');
     const videoInput = document.getElementById('videoInput');
-    const generateTranscriptBtn = document.getElementById('generateTranscript');
-    const exportButton = document.getElementById('exportButton');
+    const processButton = document.getElementById('processButton');
+    const processingProgress = document.getElementById('processingProgress');
+    const uploadForm = document.getElementById('uploadForm');
+    let selectedVideo = null;
+    let processingInterval = null;
 
-    // Initialize existing videos
-    document.querySelectorAll('.video-card').forEach(card => {
-        const videoName = card.dataset.video;
-        if (videoName) {
-            card.querySelector('.select-btn')?.addEventListener('click', () => {
-                selectVideo(videoName, card);
-            });
-        }
-    });
-
+    // Drag and drop functionality
     dropzone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropzone.style.borderColor = '#3b82f6';
@@ -154,30 +26,223 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    generateTranscriptBtn.addEventListener('click', generateTranscript);
-    exportButton.addEventListener('click', exportVideo);
-
-    // Preview updates when settings change
-    ['fontFamily', 'fontSize', 'textColor', 'position', 'captionStyle'].forEach(id => {
-        document.getElementById(id).addEventListener('change', previewCaptions);
+    dropzone.addEventListener('click', () => {
+        videoInput.click();
     });
-    document.getElementById('transcriptText').addEventListener('input', previewCaptions);
+
+    videoInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileUpload(e.target.files[0]);
+        }
+    });
+
+    // Handle existing video selection
+    document.querySelectorAll('.video-card').forEach(card => {
+        card.querySelector('.select-btn')?.addEventListener('click', () => {
+            const videoName = card.dataset.video;
+            selectVideo(videoName, card);
+        });
+    });
+
+    async function handleFileUpload(file) {
+        if (!file || !file.type.startsWith('video/')) {
+            alert('Please select a valid video file');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('video', file);
+
+        try {
+            processButton.disabled = true;
+            const response = await fetch('/upload_only', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Upload failed');
+            }
+
+            if (data.success) {
+                window.location.reload();
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Upload failed: ' + error.message);
+        } finally {
+            processButton.disabled = false;
+        }
+    }
+
+    function selectVideo(videoName, card) {
+    document.querySelectorAll('.video-card').forEach(c =>
+        c.classList.remove('selected'));
+    if (card) card.classList.add('selected');
+    selectedVideo = videoName;
+    const previewVideo = document.getElementById('previewVideo');
+    if (previewVideo) {
+        previewVideo.src = `/static/uploaded/${videoName}`;
+    }
+    showSection('editorSection');
+    // Reset transcription state
+    document.getElementById('transcriptText').value = '';
+    document.getElementById('previewBtn').disabled = true;
+}
+
+function showSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.style.display = 'block';
+    }
+}
+
+    // Process video
+    processButton.addEventListener('click', async () => {
+        if (!selectedVideo) {
+            alert('Please select a video first');
+            return;
+        }
+
+        processButton.disabled = true;
+        processingProgress.style.display = 'block';
+        const progressBar = processingProgress.querySelector('.progress-bar-fill');
+        progressBar.style.width = '0%';
+
+        try {
+            const formData = new FormData();
+            formData.append('video', selectedVideo);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || `HTTP error! status: ${response.status}`);
+            }
+
+            if (data.job_id) {
+                await checkStatus(data.job_id, progressBar);
+            } else {
+                throw new Error(data.error || 'Processing failed');
+            }
+        } catch (error) {
+            console.error('Processing error:', error);
+            alert('Processing failed: ' + error.message);
+        } finally {
+            if (processingInterval) {
+                clearInterval(processingInterval);
+            }
+            processButton.disabled = false;
+            processingProgress.style.display = 'none';
+        }
+    });
+
+
+    // Style inputs
+    const fontFamily = document.getElementById('fontFamily');
+    const fontSize = document.getElementById('fontSize');
+    const fontSizeDisplay = document.getElementById('fontSizeDisplay');
+    const textColor = document.getElementById('textColor');
+    const bgColor = document.getElementById('bgColor');
+    const captionStyle = document.getElementById('captionStyle');
+    const captionText = document.getElementById('captionText');
+    const errorMessage = document.getElementById('errorMessage');
+
+
+    // Live preview updates
+    function updateCaptionPreview() {
+        const captionPreview = document.getElementById('captionPreview');
+        if (captionPreview) {
+            captionPreview.style.fontFamily = fontFamily.value;
+            captionPreview.style.fontSize = `${fontSize.value}px`;
+            captionPreview.style.color = textColor.value;
+            captionPreview.style.backgroundColor = bgColor.value;
+            captionPreview.style.textAlign = document.getElementById('alignment').value;
+            captionPreview.style.position = 'relative';
+            captionPreview.textContent = captionText.value;
+
+            // Update position
+            const position = document.getElementById('position').value;
+            const positions = {
+                'top': '0',
+                'middle': '50%',
+                'bottom': '100%'
+            };
+            captionPreview.style.top = positions[position.split('_')[0]];
+        }
+    }
+
+    // Event listeners for style changes
+    if (fontFamily) fontFamily.addEventListener('change', updateCaptionPreview);
+    if (fontSize) {
+        fontSize.addEventListener('input', () => {
+            if (fontSizeDisplay) fontSizeDisplay.textContent = `${fontSize.value}px`;
+            updateCaptionPreview();
+        });
+    }
+    if (textColor) textColor.addEventListener('input', updateCaptionPreview);
+    if (bgColor) bgColor.addEventListener('input', updateCaptionPreview);
+    if (captionText) captionText.addEventListener('input', updateCaptionPreview);
+
+    // Handle transcript timing adjustments (This part remains unchanged)
+    let transcriptTiming = {};
+
+    function adjustTiming(index, adjustment) {
+        if (!transcriptTiming[index]) {
+            transcriptTiming[index] = 0;
+        }
+        transcriptTiming[index] += adjustment;
+        document.getElementById(`timing-${index}`).textContent =
+            `${transcriptTiming[index] > 0 ? '+' : ''}${transcriptTiming[index]}s`;
+    }
+
 });
 
-function addProcessedVideo(videoPath) {
-    const grid = document.querySelector('.output-section .video-grid');
-    const videoCard = document.createElement('div');
-    videoCard.className = 'video-card';
+async function checkStatus(jobId, progressBar) {
+    if (processingInterval) {
+        clearInterval(processingInterval);
+    }
 
-    videoCard.innerHTML = `
-        <video class="video-preview" controls>
-            <source src="${videoPath}" type="video/mp4">
-        </video>
-        <div class="video-info">
-            <span class="video-name">${videoPath.split('/').pop()}</span>
-            <a href="${videoPath}" download class="download-btn">Download</a>
-        </div>
-    `;
+    let progress = 0;
+    processingInterval = setInterval(() => {
+        progress = Math.min(progress + 2, 95);
+        if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+        }
+    }, 500);
 
-    grid.appendChild(videoCard);
+    try {
+        while (true) {
+            const response = await fetch(`/status/${jobId}`);
+            if (!response.ok) {
+                throw new Error('Status check failed');
+            }
+
+            const data = await response.json();
+            if (data.status === 'completed') {
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                }
+                window.location.reload();
+                break;
+            } else if (data.status === 'failed') {
+                throw new Error(data.error || 'Processing failed');
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    } catch (error) {
+        throw error;
+    } finally {
+        if (processingInterval) {
+            clearInterval(processingInterval);
+            processingInterval = null;
+        }
+    }
 }
