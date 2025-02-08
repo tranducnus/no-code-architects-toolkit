@@ -1,8 +1,8 @@
 
-from flask import Blueprint
+from flask import Blueprint, jsonify
 from app_utils import validate_payload, queue_task_wrapper
 import logging
-from services.v1.media.media_transcribe import process_transcription
+from services.transcription import process_transcription
 from services.authentication import authenticate
 from services.cloud_storage import upload_file
 
@@ -32,13 +32,20 @@ def generate_srt(job_id, data):
     logger.info(f"Job {job_id}: Received SRT generation request for {media_url}")
 
     try:
-        result = process_transcription(media_url, output_type='srt')
+        # Use existing process_transcription with srt output type
+        srt_result = process_transcription(media_url, output_type='srt', language=language)
         logger.info(f"Job {job_id}: SRT generation completed successfully")
 
-        cloud_url = upload_file(result)
-        logger.info(f"Job {job_id}: SRT file uploaded to cloud storage: {cloud_url}")
-
-        return cloud_url, "/v1/media/generate-srt", 200
+        # Return SRT content directly
+        with open(srt_result, 'r') as f:
+            srt_content = f.read()
+            
+        return {
+            "job_id": job_id,
+            "status": "completed",
+            "result": srt_content,
+            "type": "srt"
+        }, "/v1/media/generate-srt", 200
 
     except Exception as e:
         logger.error(f"Job {job_id}: Error during SRT generation - {str(e)}")
