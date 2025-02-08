@@ -14,29 +14,30 @@ logger = logging.getLogger(__name__)
 @validate_payload({
     "type": "object",
     "properties": {
-        "media_url": {"type": "string", "format": "uri"},
-        "output": {"type": "string", "enum": ["transcript", "srt", "vtt", "ass"]},
-        "webhook_url": {"type": "string", "format": "uri"},
-        "max_chars": {"type": "integer"},
-        "id": {"type": "string"}
+        "media_url": {"type": "string", "format": "uri"}
     },
     "required": ["media_url"],
     "additionalProperties": False
 })
-@queue_task_wrapper(bypass_queue=False)
-def transcribe(job_id, data):
+def transcribe(data):
     media_url = data['media_url']
-    output = data.get('output', 'transcript')
-    webhook_url = data.get('webhook_url')
-    max_chars = data.get('max_chars', 56)
-    id = data.get('id')
-
-    logger.info(f"Job {job_id}: Received transcription request for {media_url}")
+    logger.info(f"Received transcription request for {media_url}")
 
     try:
-        result = process_transcription(media_url, 'transcript', max_chars)
-        logger.info(f"Job {job_id}: Transcription process completed successfully")
-        return result, "/transcribe-media", 200
+        model = whisper.load_model("base")
+        input_filename = download_file(media_url, os.path.join(STORAGE_PATH, 'input_media'))
+        result = model.transcribe(input_filename)
+        
+        formatted_transcript = []
+        for segment in result['segments']:
+            start_time = timedelta(seconds=segment['start'])
+            end_time = timedelta(seconds=segment['end'])
+            text = segment['text'].strip()
+            formatted_line = f"[{start_time} --> {end_time}] {text}"
+            formatted_transcript.append(formatted_line)
+            
+        os.remove(input_filename)
+        return "\n".join(formatted_transcript), 200
         
     except Exception as e:
         logger.error(f"Job {job_id}: Error during transcription process - {str(e)}")
