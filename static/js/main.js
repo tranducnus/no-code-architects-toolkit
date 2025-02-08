@@ -193,6 +193,8 @@ document.addEventListener('DOMContentLoaded', function() {
         generateTranscriptBtn.disabled = true;
         transcriptText.value = 'Generating transcript...';
         processingProgress.style.display = 'block';
+        const progressBar = processingProgress.querySelector('.progress-bar-fill');
+        progressBar.style.width = '0%';
 
         try {
             const response = await fetch('/v1/media/transcribe', {
@@ -202,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     media_url: `/static/uploaded/${selectedVideo}`,
-                    include_text: true,
+                    include_text: false,
                     include_srt: true,
                     task: 'transcribe',
                     response_type: 'direct'
@@ -217,6 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (result.srt) {
                 transcriptText.value = result.srt;
+                progressBar.style.width = '100%';
 
                 // Create download link for SRT
                 const blob = new Blob([result.srt], { type: 'text/srt' });
@@ -228,6 +231,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
+            } else {
+                throw new Error('No SRT content generated');
             }
         } catch (error) {
             console.error('Transcription error:', error);
