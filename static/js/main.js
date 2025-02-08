@@ -197,11 +197,48 @@ function showSection(sectionId) {
         try {
             const formData = new FormData();
             formData.append('video', selectedVideo);
-            
-            const response = await fetch('/upload', {
+
+            // Generate SRT
+            const srtResponse = await fetch('/v1/media/generate-srt', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`
+                })
             });
+
+            if (srtResponse.ok) {
+                const srtBlob = new Blob([await srtResponse.text()], { type: 'text/srt' });
+                const srtUrl = window.URL.createObjectURL(srtBlob);
+                const srtLink = document.createElement('a');
+                srtLink.href = srtUrl;
+                srtLink.download = `${selectedVideo}.srt`;
+                srtLink.click();
+            }
+
+            // Generate ASS/SSA subtitles
+            const assResponse = await fetch('/transcribe-media', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                    output: 'ass'
+                })
+            });
+
+            if (assResponse.ok) {
+                const assData = await assResponse.json();
+                const assBlob = new Blob([assData.result], { type: 'text/ass' });
+                const assUrl = window.URL.createObjectURL(assBlob);
+                const assLink = document.createElement('a');
+                assLink.href = assUrl;
+                assLink.download = `${selectedVideo}.ass`;
+                assLink.click();
+            }
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
