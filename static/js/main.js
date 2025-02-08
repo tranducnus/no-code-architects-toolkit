@@ -1,10 +1,14 @@
+
 let selectedVideo = null;
+let transcriptionData = null;
 
 function selectVideo(videoName, card) {
     document.querySelectorAll('.video-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     selectedVideo = videoName;
-    document.getElementById('processButton').disabled = false;
+    document.getElementById('transcribeButton').disabled = false;
+    document.querySelector('.transcription-section').style.display = 'none';
+    document.getElementById('exportButton').style.display = 'none';
 }
 
 function addVideoToGrid(videoName) {
@@ -48,10 +52,46 @@ function addProcessedVideo(videoPath) {
     grid.appendChild(videoCard);
 }
 
+function updateTranscription(transcriptionContent) {
+    const editor = document.querySelector('.transcription-content');
+    editor.innerHTML = '';
+    
+    transcriptionContent.forEach((segment, index) => {
+        const segmentDiv = document.createElement('div');
+        segmentDiv.className = 'transcription-segment';
+        segmentDiv.innerHTML = `
+            <span class="timestamp">${formatTime(segment.start)} - ${formatTime(segment.end)}</span>
+            <span class="text" contenteditable="true">${segment.text}</span>
+        `;
+        editor.appendChild(segmentDiv);
+    });
+}
+
+function formatTime(seconds) {
+    const pad = num => num.toString().padStart(2, '0');
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+}
+
+function previewCaptions() {
+    const settings = {
+        font_family: document.getElementById('fontFamily').value,
+        font_size: parseInt(document.getElementById('fontSize').value),
+        text_color: document.getElementById('textColor').value,
+        position: document.getElementById('position').value
+    };
+    
+    // Here we would update the video preview with the new caption styles
+    // This would be implemented in Phase 2
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const dropzone = document.getElementById('dropzone');
     const videoInput = document.getElementById('videoInput');
-    const processButton = document.getElementById('processButton');
+    const transcribeButton = document.getElementById('transcribeButton');
+    const exportButton = document.getElementById('exportButton');
     const processingProgress = document.getElementById('processingProgress');
 
     // Initialize existing videos
@@ -62,6 +102,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectVideo(videoName, card);
             });
         }
+    });
+
+    // Style control event listeners
+    document.querySelectorAll('.style-options select, .style-options input').forEach(control => {
+        control.addEventListener('change', previewCaptions);
     });
 
     dropzone.addEventListener('dragover', (e) => {
@@ -92,6 +137,79 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    transcribeButton.addEventListener('click', async () => {
+        if (!selectedVideo) return;
+        
+        transcribeButton.disabled = true;
+        processingProgress.style.display = 'block';
+        
+        try {
+            const response = await fetch('/v1/video/transcribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    video: selectedVideo
+                })
+            });
+
+            if (!response.ok) throw new Error('Transcription failed');
+            
+            const data = await response.json();
+            transcriptionData = data;
+            
+            document.querySelector('.transcription-section').style.display = 'block';
+            updateTranscription(data.segments);
+            exportButton.style.display = 'block';
+            
+        } catch (error) {
+            alert('Transcription failed: ' + error.message);
+        } finally {
+            processingProgress.style.display = 'none';
+            transcribeButton.disabled = false;
+        }
+    });
+
+    exportButton.addEventListener('click', async () => {
+        if (!selectedVideo || !transcriptionData) return;
+        
+        exportButton.disabled = true;
+        processingProgress.style.display = 'block';
+        
+        try {
+            const settings = {
+                font_family: document.getElementById('fontFamily').value,
+                font_size: parseInt(document.getElementById('fontSize').value),
+                text_color: document.getElementById('textColor').value,
+                position: document.getElementById('position').value
+            };
+
+            const response = await fetch('/v1/video/export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    video: selectedVideo,
+                    transcription: transcriptionData,
+                    settings: settings
+                })
+            });
+
+            if (!response.ok) throw new Error('Export failed');
+            
+            const data = await response.json();
+            addProcessedVideo(data.url);
+            
+        } catch (error) {
+            alert('Export failed: ' + error.message);
+        } finally {
+            processingProgress.style.display = 'none';
+            exportButton.disabled = false;
+        }
+    });
+
     async function handleFileUpload(file) {
         const formData = new FormData();
         formData.append('video', file);
@@ -102,9 +220,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
             const data = await response.json();
             if (data.success) {
                 addVideoToGrid(data.video_path);
@@ -116,78 +233,4 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Upload failed: ' + error.message);
         }
     }
-
-    processButton.addEventListener('click', async () => {
-        if (!selectedVideo) return;
-
-        processButton.disabled = true;
-        processingProgress.style.display = 'block';
-        const progressBar = processingProgress.querySelector('.progress-bar-fill');
-
-        try {
-            const formData = new FormData();
-            formData.append('video', selectedVideo);
-
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            if (data.job_id) {
-                await checkStatus(data.job_id, progressBar);
-            } else {
-                throw new Error(data.error || 'Processing failed');
-            }
-        } catch (error) {
-            console.error('Processing error:', error);
-            alert('Processing failed: ' + error.message);
-            processButton.disabled = false;
-            processingProgress.style.display = 'none';
-        }
-    });
 });
-
-async function checkStatus(jobId, progressBar) {
-    let progress = 0;
-    const processingProgress = document.getElementById('processingProgress');
-    const processingInterval = setInterval(() => {
-        progress += 2;
-        if (progress <= 95 && progressBar) {
-            progressBar.style.width = `${progress}%`;
-        }
-    }, 500);
-
-    try {
-        while (true) {
-            const response = await fetch(`/status/${jobId}`);
-            const data = await response.json();
-
-            if (data.status === 'completed') {
-                clearInterval(processingInterval);
-                if (progressBar) progressBar.style.width = '100%';
-
-                if (data.url) {
-                    addProcessedVideo(data.url);
-                }
-
-                if (processingProgress) processingProgress.style.display = 'none';
-                document.getElementById('processButton').disabled = false;
-                break;
-            } else if (data.status === 'failed') {
-                throw new Error(data.error || 'Processing failed');
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-    } catch (error) {
-        clearInterval(processingInterval);
-        if (processingProgress) processingProgress.style.display = 'none';
-        document.getElementById('processButton').disabled = false;
-        alert('Processing failed: ' + error.message);
-    }
-}
