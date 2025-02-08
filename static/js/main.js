@@ -193,11 +193,10 @@ function showSection(sectionId) {
 
         try {
             // Generate SRT
-            const srtResponse = await fetch('/transcribe-media', {
+            const srtResponse = await fetch('/v1/media/generate-srt', {
                 method: 'POST',
                 body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                    output: 'srt'
+                    media_url: `/static/uploaded/${selectedVideo}`
                 }),
                 headers: {
                     'Content-Type': 'application/json'
