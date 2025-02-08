@@ -211,7 +211,11 @@ function showSection(sectionId) {
                 throw new Error(errorData || `HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const transcriptData = await response.text();
+            transcriptText.value = transcriptData;
+            document.getElementById('previewBtn').disabled = false;
+            progressBar.style.width = '100%';
+            return;
             if (data.job_id) {
                 await checkStatus(data.job_id, progressBar);
                 const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
