@@ -1,3 +1,12 @@
+let selectedVideo = null;
+
+function selectVideo(videoName, card) {
+    document.querySelectorAll('.video-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedVideo = videoName;
+    document.getElementById('processButton').disabled = false;
+}
+
 function addVideoToGrid(videoName) {
     const grid = document.querySelector('.existing-videos .video-grid');
     const videoCard = document.createElement('div');
@@ -14,11 +23,8 @@ function addVideoToGrid(videoName) {
         </div>
     `;
 
-    videoCard.querySelector('.select-btn').addEventListener('click', function() {
-        document.querySelectorAll('.video-card').forEach(c => c.classList.remove('selected'));
-        this.closest('.video-card').classList.add('selected');
-        selectedVideo = videoName;
-        document.getElementById('processButton').disabled = false;
+    videoCard.querySelector('.select-btn').addEventListener('click', () => {
+        selectVideo(videoName, videoCard);
     });
 
     grid.appendChild(videoCard);
@@ -47,9 +53,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const videoInput = document.getElementById('videoInput');
     const processButton = document.getElementById('processButton');
     const processingProgress = document.getElementById('processingProgress');
-    let selectedVideo = null;
 
-    // Drag and drop functionality
+    // Initialize existing videos
+    document.querySelectorAll('.video-card').forEach(card => {
+        const videoName = card.dataset.video;
+        if (videoName) {
+            card.querySelector('.select-btn')?.addEventListener('click', () => {
+                selectVideo(videoName, card);
+            });
+        }
+    });
+
     dropzone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropzone.style.borderColor = '#3b82f6';
@@ -78,14 +92,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Handle existing video selection
-    document.querySelectorAll('.video-card').forEach(card => {
-        card.querySelector('.select-btn')?.addEventListener('click', () => {
-            const videoName = card.dataset.video;
-            selectVideo(videoName, card);
-        });
-    });
-
     async function handleFileUpload(file) {
         const formData = new FormData();
         formData.append('video', file);
@@ -111,22 +117,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function selectVideo(videoName, card) {
-        document.querySelectorAll('.video-card').forEach(c =>
-            c.classList.remove('selected'));
-        card.classList.add('selected');
-        selectedVideo = videoName;
-        processButton.disabled = false;
-    }
-
-    // Process video
     processButton.addEventListener('click', async () => {
         if (!selectedVideo) return;
 
         processButton.disabled = true;
         processingProgress.style.display = 'block';
         const progressBar = processingProgress.querySelector('.progress-bar-fill');
-        let progress = 0;
 
         try {
             const formData = new FormData();
@@ -154,66 +150,6 @@ document.addEventListener('DOMContentLoaded', function() {
             processingProgress.style.display = 'none';
         }
     });
-
-
-    // Style inputs
-    const fontFamily = document.getElementById('fontFamily');
-    const fontSize = document.getElementById('fontSize');
-    const fontSizeDisplay = document.getElementById('fontSizeDisplay');
-    const textColor = document.getElementById('textColor');
-    const bgColor = document.getElementById('bgColor');
-    const captionStyle = document.getElementById('captionStyle');
-    const captionText = document.getElementById('captionText');
-    const errorMessage = document.getElementById('errorMessage');
-
-
-    // Live preview updates
-    function updateCaptionPreview() {
-        const captionPreview = document.getElementById('captionPreview');
-        if (captionPreview) {
-            captionPreview.style.fontFamily = fontFamily.value;
-            captionPreview.style.fontSize = `${fontSize.value}px`;
-            captionPreview.style.color = textColor.value;
-            captionPreview.style.backgroundColor = bgColor.value;
-            captionPreview.style.textAlign = document.getElementById('alignment').value;
-            captionPreview.style.position = 'relative';
-            captionPreview.textContent = captionText.value;
-
-            // Update position
-            const position = document.getElementById('position').value;
-            const positions = {
-                'top': '0',
-                'middle': '50%',
-                'bottom': '100%'
-            };
-            captionPreview.style.top = positions[position.split('_')[0]];
-        }
-    }
-
-    // Event listeners for style changes
-    if (fontFamily) fontFamily.addEventListener('change', updateCaptionPreview);
-    if (fontSize) {
-        fontSize.addEventListener('input', () => {
-            if (fontSizeDisplay) fontSizeDisplay.textContent = `${fontSize.value}px`;
-            updateCaptionPreview();
-        });
-    }
-    if (textColor) textColor.addEventListener('input', updateCaptionPreview);
-    if (bgColor) bgColor.addEventListener('input', updateCaptionPreview);
-    if (captionText) captionText.addEventListener('input', updateCaptionPreview);
-
-    // Handle transcript timing adjustments (This part remains unchanged)
-    let transcriptTiming = {};
-
-    function adjustTiming(index, adjustment) {
-        if (!transcriptTiming[index]) {
-            transcriptTiming[index] = 0;
-        }
-        transcriptTiming[index] += adjustment;
-        document.getElementById(`timing-${index}`).textContent =
-            `${transcriptTiming[index] > 0 ? '+' : ''}${transcriptTiming[index]}s`;
-    }
-
 });
 
 async function checkStatus(jobId, progressBar) {
@@ -235,30 +171,12 @@ async function checkStatus(jobId, progressBar) {
                 clearInterval(processingInterval);
                 if (progressBar) progressBar.style.width = '100%';
 
-                const videoResult = document.getElementById('videoResult');
-                const previewVideo = document.getElementById('previewVideo');
-
-                if (previewVideo) previewVideo.src = data.url;
-                if (videoResult) videoResult.style.display = 'block';
-                if (processingProgress) processingProgress.style.display = 'none';
-
-                // Refresh the processed videos section
-                const processedVideosContainer = document.querySelector('.output-section .video-grid');
-                if (processedVideosContainer) {
-                    const videoCard = document.createElement('div');
-                    videoCard.className = 'video-card';
-                    const filename = data.url.split('/').pop();
-                    videoCard.innerHTML = `
-                        <video class="video-preview" controls>
-                            <source src="${data.url}" type="video/mp4">
-                        </video>
-                        <div class="video-info">
-                            <span class="video-name">${filename}</span>
-                            <a href="${data.url}" download class="download-btn">Download</a>
-                        </div>
-                    `;
-                    processedVideosContainer.appendChild(videoCard);
+                if (data.url) {
+                    addProcessedVideo(data.url);
                 }
+
+                if (processingProgress) processingProgress.style.display = 'none';
+                document.getElementById('processButton').disabled = false;
                 break;
             } else if (data.status === 'failed') {
                 throw new Error(data.error || 'Processing failed');
@@ -269,6 +187,7 @@ async function checkStatus(jobId, progressBar) {
     } catch (error) {
         clearInterval(processingInterval);
         if (processingProgress) processingProgress.style.display = 'none';
-        document.getElementById('errorMessage').textContent = `Error: ${error.message}`;
+        document.getElementById('processButton').disabled = false;
+        alert('Processing failed: ' + error.message);
     }
 }
