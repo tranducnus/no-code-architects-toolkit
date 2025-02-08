@@ -24,8 +24,8 @@ def extract_srt_portion(transcription_text):
     Returns:
         str: Extracted SRT content
     """
-    # Regular expression to match timestamp lines with content
-    pattern = r'\[(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})\]\s*(.*?)(?=\[\d{2}:\d{2}\.\d{3} -->|\Z)'
+    # Regular expression to match timestamp lines with content in Whisper format
+    pattern = r'\[(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})\]\s*(.*?)(?=\[|\Z)'
     matches = re.finditer(pattern, transcription_text, re.DOTALL)
     
     srt_entries = []
