@@ -201,9 +201,14 @@ function showSection(sectionId) {
             formData.append('video', selectedVideo);
             formData.append('output', 'srt');
             
-            const response = await fetch('/transcribe-media', {
+            const response = await fetch('/v1/media/generate-srt', {
                 method: 'POST',
-                body: formData
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
             
             if (!response.ok) {
