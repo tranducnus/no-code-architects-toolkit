@@ -1,4 +1,3 @@
-
 let selectedVideo = null;
 let currentTranscript = null;
 
@@ -9,24 +8,26 @@ function showSection(sectionId) {
     });
 }
 
-function selectVideo(videoName, card) {
-    document.querySelectorAll('.video-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
+function selectVideo(videoName) {
     selectedVideo = videoName;
-    
-    // Update preview video source
     const previewVideo = document.getElementById('previewVideo');
     previewVideo.src = `/static/uploaded/${videoName}`;
-    
-    // Move to editor section
     showSection('editorSection');
+    // Reset transcription state
+    document.getElementById('transcriptText').value = '';
+    document.getElementById('previewCaptions').disabled = true;
 }
 
 async function generateTranscript() {
     if (!selectedVideo) return;
-    
+
+    const generateBtn = document.getElementById('generateTranscript');
+    const previewBtn = document.getElementById('previewCaptions');
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Generating...';
+
     try {
-        const response = await fetch('/generate-transcription', {
+        const response = await fetch('/api/v1/video/generate-transcript', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -37,13 +38,17 @@ async function generateTranscript() {
         });
 
         if (!response.ok) throw new Error('Transcription failed');
-        
+
         const data = await response.json();
         currentTranscript = data.transcript;
         document.getElementById('transcriptText').value = currentTranscript;
+        previewBtn.disabled = false;
     } catch (error) {
         console.error('Transcription error:', error);
         alert('Failed to generate transcript: ' + error.message);
+    } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate Transcript';
     }
 }
 
@@ -59,7 +64,7 @@ async function previewCaptions() {
     };
 
     try {
-        const response = await fetch('/preview-captions', {
+        const response = await fetch('/api/v1/video/preview-captions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -72,7 +77,7 @@ async function previewCaptions() {
         });
 
         if (!response.ok) throw new Error('Preview failed');
-        
+
         const data = await response.json();
         document.getElementById('previewVideo').src = data.preview_url;
     } catch (error) {
@@ -82,13 +87,16 @@ async function previewCaptions() {
 }
 
 async function exportVideo() {
-    if (!selectedVideo || !currentTranscript) return;
-    
+    if (!selectedVideo || !currentTranscript) {
+        alert('Please generate transcript first');
+        return;
+    }
+
     const exportProgress = document.getElementById('exportProgress');
     exportProgress.style.display = 'block';
-    
+
     try {
-        const response = await fetch('/export-video', {
+        const response = await fetch('/api/v1/video/export', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -107,10 +115,9 @@ async function exportVideo() {
         });
 
         if (!response.ok) throw new Error('Export failed');
-        
+
         const data = await response.json();
-        addProcessedVideo(data.url);
-        showSection('uploadSection');
+        window.location.href = data.url;
     } catch (error) {
         console.error('Export error:', error);
         alert('Failed to export: ' + error.message);
@@ -121,20 +128,26 @@ async function exportVideo() {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    const dropzone = document.getElementById('dropzone');
-    const videoInput = document.getElementById('videoInput');
     const generateTranscriptBtn = document.getElementById('generateTranscript');
+    const previewCaptionsBtn = document.getElementById('previewCaptions');
     const exportButton = document.getElementById('exportButton');
+
+    generateTranscriptBtn?.addEventListener('click', generateTranscript);
+    previewCaptionsBtn?.addEventListener('click', previewCaptions);
+    exportButton?.addEventListener('click', exportVideo);
 
     // Initialize existing videos
     document.querySelectorAll('.video-card').forEach(card => {
         const videoName = card.dataset.video;
         if (videoName) {
             card.querySelector('.select-btn')?.addEventListener('click', () => {
-                selectVideo(videoName, card);
+                selectVideo(videoName);
             });
         }
     });
+
+    const dropzone = document.getElementById('dropzone');
+    const videoInput = document.getElementById('videoInput');
 
     dropzone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -154,8 +167,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    generateTranscriptBtn.addEventListener('click', generateTranscript);
-    exportButton.addEventListener('click', exportVideo);
 
     // Preview updates when settings change
     ['fontFamily', 'fontSize', 'textColor', 'position', 'captionStyle'].forEach(id => {
