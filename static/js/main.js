@@ -190,34 +190,26 @@ function showSection(sectionId) {
         
         generateTranscriptBtn.disabled = true;
         transcriptText.value = 'Generating transcript...';
-        processingProgress.style.display = 'block';
-        const progressBar = processingProgress.querySelector('.progress-bar-fill');
-        progressBar.style.width = '0%';
         
         try {
-            const formData = new FormData();
-            formData.append('video', selectedVideo);
-            
-            const response = await fetch('/upload', {
+            const response = await fetch('/transcribe-media', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                    task: 'transcribe',
+                    output: 'transcript'
+                })
             });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
-            if (data.job_id) {
-                await checkStatus(data.job_id, progressBar);
-                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
-                if (!transcriptResponse.ok) {
-                    throw new Error('Failed to fetch transcript');
-                }
-                const transcriptData = await transcriptResponse.text();
-                transcriptText.value = transcriptData;
-                progressBar.style.width = '100%';
-            }
+            const transcriptData = await response.text();
+            transcriptText.value = transcriptData;
         } catch (error) {
             console.error('Transcription error:', error);
             transcriptText.value = 'Error generating transcript';
