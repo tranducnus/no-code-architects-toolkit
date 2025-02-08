@@ -24,31 +24,33 @@ def extract_srt_portion(transcription_text):
     Returns:
         str: Extracted SRT content
     """
-    # Regular expression to match timestamp lines
-    timestamp_pattern = r'\[(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})\](.*?)(?=\[\d{2}:\d{2}\.\d{3} -->|\Z)'
-
-    # Find all matches in the text
-    matches = re.finditer(timestamp_pattern, transcription_text, re.DOTALL)
-
-    srt_parts = []
-    for i, match in enumerate(matches, 1):
+    # Regular expression to match timestamp lines with content
+    pattern = r'\[(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})\]\s*(.*?)(?=\[\d{2}:\d{2}\.\d{3} -->|\Z)'
+    matches = re.finditer(pattern, transcription_text, re.DOTALL)
+    
+    srt_entries = []
+    counter = 1
+    
+    for match in matches:
         start_time = match.group(1)
         end_time = match.group(2)
         text = match.group(3).strip()
-
-        # Convert to SRT format (add hours and change decimal separator)
-        start_time = '00:' + start_time.replace('.', ',')
-        end_time = '00:' + end_time.replace('.', ',')
-
-        # Format as SRT entry
-        srt_parts.extend([
-            str(i),
-            f"{start_time} --> {end_time}",
-            text,
-            ''  # Empty line between entries
-        ])
-
-    return '\n'.join(srt_parts).strip()
+        
+        if text:  # Only include entries with actual content
+            # Format times to SRT format (HH:MM:SS,mmm)
+            start_formatted = f"00:{start_time.replace('.', ',')}"
+            end_formatted = f"00:{end_time.replace('.', ',')}"
+            
+            # Create SRT entry
+            srt_entries.extend([
+                str(counter),
+                f"{start_formatted} --> {end_formatted}",
+                text,
+                ""  # Empty line between entries
+            ])
+            counter += 1
+    
+    return "\n".join(srt_entries).rstrip()
 
 def process_transcription(media_url, output_type='transcript', max_chars=56, language=None, style_settings=None):
     """Transcribe media and return the transcript, SRT or ASS file path."""
