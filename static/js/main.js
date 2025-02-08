@@ -208,8 +208,18 @@ function showSection(sectionId) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const result = await response.text();
-            transcriptText.value = result;
+            const result = await response.json();
+            transcriptText.value = result.srt_content;
+            
+            // Create a download link for the SRT file
+            const downloadLink = document.createElement('a');
+            downloadLink.href = result.srt_url;
+            downloadLink.download = 'transcript.srt';
+            downloadLink.textContent = 'Download SRT';
+            downloadLink.className = 'download-btn';
+            
+            // Add the download link after the transcript text area
+            transcriptText.parentNode.insertBefore(downloadLink, transcriptText.nextSibling);
             progressBar.style.width = '100%';
         } catch (error) {
             console.error('Transcription error:', error);
