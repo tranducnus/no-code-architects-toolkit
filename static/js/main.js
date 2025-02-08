@@ -310,7 +310,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Subtitle generation error:', error);
-            alert('Error generating subtitles. Please try again.');
+            const errorMessage = error.response ? await error.response.json() : { error: 'Network error occurred' };
+            alert(errorMessage.error || 'Error generating subtitles. Please try again.');
             transcriptText.value = '';
         } finally {
             processingProgress.style.display = 'none';

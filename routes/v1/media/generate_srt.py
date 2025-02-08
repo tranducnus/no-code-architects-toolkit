@@ -35,6 +35,9 @@ def generate_srt(data):
             language=language
         )
         
+        if not srt_content:
+            return {"error": "Failed to generate subtitles"}, 400
+            
         return {
             "text": text,
             "srt": srt_content,
@@ -43,4 +46,4 @@ def generate_srt(data):
 
     except Exception as e:
         logger.error(f"Error during SRT generation: {str(e)}")
-        return {"error": str(e)}, 500
+        return {"error": "Failed to generate subtitles. Please check your video file."}, 400
