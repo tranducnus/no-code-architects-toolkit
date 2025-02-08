@@ -7,15 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const processingProgress = document.getElementById('processingProgress');
     const uploadForm = document.getElementById('uploadForm');
     let selectedVideo = null;
-
-function formatTime(seconds) {
-    const pad = (num) => num.toString().padStart(2, '0');
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    const ms = Math.floor((seconds % 1) * 1000);
-    return `${pad(mins)}:${pad(secs)}.${ms.toString().padStart(3, '0')}`;
-}
-
     let processingInterval = null;
 
     // Drag and drop functionality
@@ -204,7 +195,7 @@ function formatTime(seconds) {
             const response = await fetch('/transcribe-media', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     media_url: `/static/uploaded/${selectedVideo}`,
