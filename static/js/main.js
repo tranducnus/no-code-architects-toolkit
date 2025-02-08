@@ -260,9 +260,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function generateSrtAndAss() {
-        // Placeholder implementation.  Replace with actual SRT and ASS generation logic.
-        console.log("Generating SRT and ASS files...");
-        alert("SRT and ASS generation not yet implemented.");
+        if (!selectedVideo) {
+            alert('Please select a video first');
+            return;
+        }
+
+        const transcriptText = document.getElementById('transcriptText');
+        const processingProgress = document.getElementById('processingProgress');
+        
+        transcriptText.value = 'Generating SRT and ASS files...';
+        processingProgress.style.display = 'block';
+        
+        try {
+            const response = await fetch('/v1/media/transcribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                    include_text: false,
+                    include_srt: true,
+                    include_segments: false,
+                    word_timestamps: true,
+                    response_type: 'direct'
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            if (result.srt) {
+                transcriptText.value = result.srt;
+            } else {
+                throw new Error('No SRT content received');
+            }
+        } catch (error) {
+            console.error('SRT generation error:', error);
+            transcriptText.value = 'Error generating SRT and ASS files';
+        } finally {
+            processingProgress.style.display = 'none';
+        }
     }
 });
 
