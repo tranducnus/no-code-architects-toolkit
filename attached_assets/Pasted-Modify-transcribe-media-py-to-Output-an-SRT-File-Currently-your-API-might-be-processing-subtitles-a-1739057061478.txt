@@ -1,0 +1,84 @@
+Modify transcribe_media.py to Output an SRT File
+Currently, your API might be processing subtitles and embedding them directly. Instead, modify it to generate an SRT file first.
+
+Inside transcribe_media.py, find the part where it processes subtitles and add this:
+
+python
+Copy
+Edit
+import subprocess
+import os
+from flask import jsonify
+
+def generate_srt(input_file):
+    output_srt_path = "/tmp/output.srt"
+    command = f"ffmpeg -i {input_file} -map 0:s:0 {output_srt_path}"
+    subprocess.run(command, shell=True, check=True)
+    return output_srt_path
+
+def transcribe_media(input_file):
+    srt_file = generate_srt(input_file)
+
+    return jsonify({
+        "message": "SRT file generated successfully.",
+        "srt_url": f"https://your-server.com/files/output.srt"
+    })
+✅ What this does:
+
+Extracts subtitles as an SRT file (output.srt).
+Returns the downloadable SRT URL instead of embedding it in the video.
+🔹 STEP 2: Edit the SRT File Manually
+Once the API generates the SRT file, download it, edit it in a subtitle editor (like Aegisub or Notepad++), and save it.
+
+Example of a manually edited SRT file:
+
+pgsql
+Copy
+Edit
+1
+00:00:00,000 --> 00:00:05,720
+Hello! Welcome to this tutorial.
+
+2
+00:00:05,720 --> 00:00:07,920
+Here, we will learn how to separate subtitles.
+🔹 STEP 3: Apply the Edited SRT to the Video Later
+After you finish editing, use /v1/ffmpeg/compose to overlay the subtitles on the video.
+
+A. JSON Request for /v1/ffmpeg/compose
+json
+Copy
+Edit
+{
+    "id": "apply-subtitles",
+    "inputs": [
+        {
+            "file_url": "https://your-server.com/input.mp4"
+        }
+    ],
+    "filters": [
+        {
+            "filter": "subtitles",
+            "options": "https://your-server.com/files/edited_output.srt"
+        }
+    ],
+    "outputs": [
+        {
+            "options": [
+                {
+                    "option": "-c:v",
+                    "argument": "libx264"
+                }
+            ]
+        }
+    ]
+}
+✅ What this does:
+
+Loads the original video without subtitles.
+Uses your manually edited SRT file.
+Applies subtitles permanently into the final video.
+Final Workflow
+1️⃣ Generate & Download SRT → Modify transcribe_media.py.
+2️⃣ Edit the SRT file manually.
+3️⃣ Use /v1/ffmpeg/compose to apply subtitles later.
