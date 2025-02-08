@@ -52,6 +52,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const data = await response.json();
             if (data.success) {
                 location.reload(); // Refresh to show new video
@@ -90,13 +93,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
 
-            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-            if (data.success) {
-                progressBar.style.width = '100%';
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
+            const data = await response.json();
+            if (data.job_id) {
+                await checkStatus(data.job_id, progressBar);
             } else {
                 throw new Error(data.error || 'Processing failed');
             }
