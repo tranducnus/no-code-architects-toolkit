@@ -193,14 +193,15 @@ function showSection(sectionId) {
 
         try {
             // Generate SRT
-            const srtResponse = await fetch('/v1/media/generate-srt', {
+            const srtResponse = await fetch('/transcribe-media', {
                 method: 'POST',
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                    output: 'srt'
+                }),
                 headers: {
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`
-                })
+                }
             });
 
             if (!srtResponse.ok) throw new Error('SRT generation failed');
@@ -220,13 +221,13 @@ function showSection(sectionId) {
             // Generate ASS using transcribe-media endpoint
             const assResponse = await fetch('/transcribe-media', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({
                     media_url: `/static/uploaded/${selectedVideo}`,
                     output: 'ass'
-                })
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
 
             if (!assResponse.ok) throw new Error('ASS generation failed');
