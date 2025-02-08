@@ -38,11 +38,11 @@ def transcribe(job_id, data):
         logger.info(f"Job {job_id}: Transcription process completed successfully")
 
         if output == 'srt':
-            # For SRT, return the content directly
+            # For SRT, return as a job result
             with open(result, 'r') as f:
                 content = f.read()
             os.remove(result)  # Clean up the temporary file
-            return content, "/transcribe-media", 200
+            return {"job_id": job_id, "status": "completed", "result": content}, 200
         elif output in ['vtt', 'ass']:
             cloud_url = upload_file(result)
             os.remove(result)  # Remove the temporary file after uploading

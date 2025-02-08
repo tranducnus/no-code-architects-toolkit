@@ -208,8 +208,13 @@ function showSection(sectionId) {
                 }
 
                 if (data.job_id) {
-                    const result = await checkStatus(data.job_id, progressBar);
-                    transcriptText.value = result;
+                    if (data.status === 'completed') {
+                        transcriptText.value = data.result;
+                        progressBar.style.width = '100%';
+                    } else {
+                        const result = await checkStatus(data.job_id, progressBar);
+                        transcriptText.value = result;
+                    }
                 } else {
                     throw new Error(data.error || 'Transcription failed');
                 }
