@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const transcriptText = document.getElementById('transcriptText');
         const processingProgress = document.getElementById('processingProgress');
 
-        transcriptText.value = 'Generating SRT and ASS files...';
+        transcriptText.value = 'Generating subtitles...';
         processingProgress.style.display = 'block';
 
         try {
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const result = await response.json();
             let displayContent = '';
-            
+
             if (result.srt) {
                 displayContent += '=== SRT Content ===\n' + result.srt + '\n\n';
             }
@@ -310,7 +310,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Subtitle generation error:', error);
-            transcriptText.value = 'Error generating subtitles: ' + error.message;
+            alert('Error generating subtitles. Please try again.');
+            transcriptText.value = '';
         } finally {
             processingProgress.style.display = 'none';
         }
