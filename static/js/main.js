@@ -310,8 +310,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Subtitle generation error:', error);
-            const errorMessage = error.response ? await error.response.json() : { error: 'Network error occurred' };
-            alert(errorMessage.error || 'Error generating subtitles. Please try again.');
+            let errorMessage = 'Error generating subtitles. Please try again.';
+            
+            if (error.response) {
+                try {
+                    const errorData = await error.response.json();
+                    errorMessage = errorData.error || errorMessage;
+                } catch (e) {
+                    console.error('Error parsing error response:', e);
+                }
+            }
+            
+            alert(errorMessage);
             transcriptText.value = '';
         } finally {
             processingProgress.style.display = 'none';
