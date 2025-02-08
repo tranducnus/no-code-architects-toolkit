@@ -79,12 +79,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function selectVideo(videoName, card) {
-        document.querySelectorAll('.video-card').forEach(c =>
-            c.classList.remove('selected'));
-        card.classList.add('selected');
-        selectedVideo = videoName;
-        processButton.disabled = false;
+    document.querySelectorAll('.video-card').forEach(c =>
+        c.classList.remove('selected'));
+    if (card) card.classList.add('selected');
+    selectedVideo = videoName;
+    const previewVideo = document.getElementById('previewVideo');
+    if (previewVideo) {
+        previewVideo.src = `/static/uploaded/${videoName}`;
     }
+    showSection('editorSection');
+    // Reset transcription state
+    document.getElementById('transcriptText').value = '';
+    document.getElementById('previewBtn').disabled = true;
+}
+
+function showSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.style.display = 'block';
+    }
+}
 
     // Process video
     processButton.addEventListener('click', async () => {
