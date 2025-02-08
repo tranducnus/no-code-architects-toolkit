@@ -190,18 +190,18 @@ function showSection(sectionId) {
         
         generateTranscriptBtn.disabled = true;
         transcriptText.value = 'Generating transcript...';
-        processingProgress.style.display = 'block';
-        const progressBar = processingProgress.querySelector('.progress-bar-fill');
-        progressBar.style.width = '0%';
         
         try {
-            const formData = new FormData();
-            formData.append('media_url', `/static/uploaded/${selectedVideo}`);
-            formData.append('output', 'srt');
-            
             const response = await fetch('/transcribe-media', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                    task: 'transcribe',
+                    output: 'transcript'
+                })
             });
             
             if (!response.ok) {
@@ -210,16 +210,11 @@ function showSection(sectionId) {
 
             const result = await response.text();
             transcriptText.value = result;
-            progressBar.style.width = '100%';
         } catch (error) {
             console.error('Transcription error:', error);
             transcriptText.value = 'Error generating transcript';
         } finally {
-            if (processingInterval) {
-                clearInterval(processingInterval);
-            }
             generateTranscriptBtn.disabled = false;
-            processingProgress.style.display = 'none';
         }
     });
 
