@@ -206,7 +206,9 @@ function showSection(sectionId) {
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.text();
+                console.error('Server error:', errorData);
+                throw new Error(errorData || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
@@ -222,8 +224,8 @@ function showSection(sectionId) {
                 progressBar.style.width = '100%';
             }
         } catch (error) {
-            console.error('Transcription error:', error);
-            transcriptText.value = 'Error generating transcript. Please try again.';
+            console.error('Transcription error:', error.message);
+            transcriptText.value = `Error generating transcript: ${error.message}`;
         } finally {
             if (processingInterval) {
                 clearInterval(processingInterval);
