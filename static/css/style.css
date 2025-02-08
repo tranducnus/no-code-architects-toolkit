@@ -1,3 +1,23 @@
+
+.format-selector {
+    margin-right: 10px;
+    display: inline-block;
+}
+
+.format-dropdown {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+}
+
+.editor-controls {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
 * {
     margin: 0;
     padding: 0;

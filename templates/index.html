@@ -47,6 +47,14 @@
             <section id="editorSection" class="editor-section" style="display: none;">
                 <h2>Caption Editor</h2>
                 <div class="editor-controls">
+                    <div class="format-selector">
+                        <select id="outputFormat" class="format-dropdown">
+                            <option value="transcript">Plain Text</option>
+                            <option value="srt">SRT Subtitles</option>
+                            <option value="vtt">VTT Subtitles</option>
+                            <option value="ass">ASS Subtitles</option>
+                        </select>
+                    </div>
                     <button id="generateTranscriptBtn" class="action-btn">Generate Transcript</button>
                     <button id="previewBtn" class="action-btn" disabled>Preview</button>
                 </div>
