@@ -192,9 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
         transcriptText.value = 'Generating transcript...';
 
         try {
-            const formData = new FormData();
-            formData.append('video', selectedVideo);
-
             const response = await fetch('/transcribe-media', {
                 method: 'POST',
                 headers: {
@@ -202,10 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     media_url: `/static/uploaded/${selectedVideo}`,
-                    task: 'transcribe',
-                    include_text: true,
-                    include_srt: false,
-                    include_segments: false
+                    output: 'transcript'
                 })
             });
 
@@ -213,8 +207,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
-            transcriptText.value = data.text || data;
+            const result = await response.text();
+            transcriptText.value = result;
         } catch (error) {
             console.error('Transcription error:', error);
             transcriptText.value = 'Error generating transcript';
