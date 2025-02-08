@@ -193,21 +193,24 @@ function showSection(sectionId) {
 
         try {
             // Generate SRT
-            const srtResponse = await fetch('/v1/media/generate-srt', {
+            const srtResponse = await fetch('/v1/media/transcribe', {
                 method: 'POST',
                 body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                    include_srt: true,
+                    include_text: true,
+                    response_type: 'direct'
                 }),
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
 
-            if (!srtResponse.ok) throw new Error('SRT generation failed');
-            const srtContent = await srtResponse.text();
+            if (!srtResponse.ok) throw new Error('Transcription failed');
+            const result = await srtResponse.json();
             
             // Download SRT file
-            const srtBlob = new Blob([srtContent], { type: 'text/srt' });
+            const srtBlob = new Blob([result.srt], { type: 'text/srt' });
             const srtUrl = URL.createObjectURL(srtBlob);
             const srtLink = document.createElement('a');
             srtLink.href = srtUrl;
@@ -217,8 +220,8 @@ function showSection(sectionId) {
             document.body.removeChild(srtLink);
             URL.revokeObjectURL(srtUrl);
 
-            // Generate ASS using transcribe-media endpoint
-            const assResponse = await fetch('/transcribe-media', {
+            // Generate ASS file
+            const assResponse = await fetch('/v1/media/transcribe', {
                 method: 'POST',
                 body: JSON.stringify({
                     media_url: `/static/uploaded/${selectedVideo}`,
