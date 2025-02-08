@@ -34,21 +34,9 @@ def transcribe(job_id, data):
     logger.info(f"Job {job_id}: Received transcription request for {media_url}")
 
     try:
-        result = process_transcription(media_url, output, max_chars)
+        result = process_transcription(media_url, 'transcript', max_chars)
         logger.info(f"Job {job_id}: Transcription process completed successfully")
-
-        if output == 'srt':
-            # For SRT, return as a job result
-            with open(result, 'r') as f:
-                content = f.read()
-            os.remove(result)  # Clean up the temporary file
-            return {"job_id": job_id, "status": "completed", "result": content}, 200
-        elif output in ['vtt', 'ass']:
-            cloud_url = upload_file(result)
-            os.remove(result)  # Remove the temporary file after uploading
-            return cloud_url, "/transcribe-media", 200
-        else:
-            return result, "/transcribe-media", 200
+        return result, "/transcribe-media", 200
         
     except Exception as e:
         logger.error(f"Job {job_id}: Error during transcription process - {str(e)}")
