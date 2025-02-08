@@ -202,22 +202,13 @@ function showSection(sectionId) {
                     body: formData
                 });
                 
-                const data = await response.json();
                 if (!response.ok) {
-                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                if (data.job_id) {
-                    if (data.status === 'completed') {
-                        transcriptText.value = data.result;
-                        progressBar.style.width = '100%';
-                    } else {
-                        const result = await checkStatus(data.job_id, progressBar);
-                        transcriptText.value = result;
-                    }
-                } else {
-                    throw new Error(data.error || 'Transcription failed');
-                }
+                const result = await response.text();
+                transcriptText.value = result;
+                progressBar.style.width = '100%';
             } catch (error) {
                 console.error('Transcription error:', error);
                 transcriptText.value = 'Error generating transcript';
