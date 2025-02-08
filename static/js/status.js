@@ -11,8 +11,13 @@ async function checkStatus() {
         console.log('Current status:', data);  // Debug log
 
         if (data.status === 'completed') {
-            resultElem.innerHTML = `<div class="success-message">Processing completed!</div>`;
-            addProcessedVideo(data.url);
+            resultElem.innerHTML = `
+                <div class="success-message">Processing completed!</div>
+                <video width="100%" controls>
+                    <source src="${data.url}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <a href="${data.url}" download class="download-button">Download Video</a>`;
             return;
         }
 

@@ -1,30 +1,30 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Video Caption Editor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>Video Processing</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Video Caption Editor</h1>
+            <h1>Video Processing Tool</h1>
         </header>
 
         <main>
-            <!-- Step 1: Upload Section -->
-            <section class="upload-section" id="uploadSection">
-                <h2>1. Upload or Select Video</h2>
-                <div class="dropzone" id="dropzone">
-                    <input type="file" id="videoInput" accept="video/*" hidden>
-                    <div class="dropzone-content">
-                        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5-5 5 5M12 5v12"/>
-                        </svg>
-                        <p>Drag & drop video or click to browse</p>
+            <section class="upload-section">
+                <h2>Upload or Select Video</h2>
+                <form id="uploadForm" class="upload-form">
+                    <div class="dropzone" id="dropzone">
+                        <input type="file" id="videoInput" name="video" accept="video/*" hidden>
+                        <div class="dropzone-content">
+                            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5-5 5 5M12 5v12"/>
+                            </svg>
+                            <p>Drag & drop video or click to browse</p>
+                        </div>
                     </div>
-                </div>
+                </form>
 
                 <div class="existing-videos">
                     <h3>Existing Videos</h3>
@@ -44,72 +44,64 @@
                 </div>
             </section>
 
-            <!-- Step 2: Transcription -->
-            <section class="editor-section" id="editorSection" style="display: none;">
-                <h2>2. Generate & Edit Transcript</h2>
-                <div class="editor-container">
-                    <div class="video-preview-container">
+            <section id="editorSection" class="editor-section" style="display: none;">
+                <h2>Caption Editor</h2>
+                <div class="editor-controls">
+                    <button id="generateTranscriptBtn" class="action-btn">Generate Transcript</button>
+                    <button id="previewBtn" class="action-btn" disabled>Preview</button>
+                </div>
+                
+                <div class="editor-layout">
+                    <div class="transcript-editor">
+                        <textarea id="transcriptText" placeholder="Transcript will appear here..."></textarea>
+                    </div>
+                    
+                    <div class="preview-area">
                         <video id="previewVideo" controls>
-                            <source src="" type="video/mp4">
+                            Your browser does not support the video tag.
                         </video>
                     </div>
-                    <div class="caption-editor">
-                        <div class="caption-controls">
-                            <button id="generateTranscript" class="primary-button">Generate Transcript</button>
-                            <button id="previewCaptions" class="secondary-button" disabled>Preview Captions</button>
+                </div>
+
+                <div class="caption-controls">
+                    <div class="style-control">
+                        <label>Font Family:</label>
+                        <select id="fontFamily">
+                            <option value="Arial">Arial</option>
+                            <option value="Roboto">Roboto</option>
+                            <option value="DejaVu Sans">DejaVu Sans</option>
+                        </select>
+                    </div>
+                    <div class="style-control">
+                        <label>Font Size:</label>
+                        <input type="range" id="fontSize" min="12" max="72" value="24">
+                        <span id="fontSizeDisplay">24px</span>
+                    </div>
+                    <div class="style-control">
+                        <label>Text Color:</label>
+                        <input type="color" id="textColor" value="#ffffff">
+                    </div>
+                    <div class="style-control">
+                        <label>Style:</label>
+                        <select id="captionStyle">
+                            <option value="classic">Classic</option>
+                            <option value="karaoke">Karaoke</option>
+                            <option value="highlight">Highlight</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="processButton" class="process-btn">Process Video</button>
+                    <div id="processingProgress" class="processing-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill"></div>
                         </div>
-                        <div class="transcript-editor">
-                            <textarea id="transcriptText" placeholder="Transcript will appear here..." rows="10"></textarea>
-                        </div>
-                        <div class="style-editor">
-                            <h3>Caption Style</h3>
-                            <select id="captionStyle">
-                                <option value="classic">Classic</option>
-                                <option value="karaoke">Karaoke</option>
-                                <option value="highlight">Highlight</option>
-                            </select>
-                        <div class="style-controls">
-                            <div class="control-group">
-                                <label>Font:</label>
-                                <select id="fontFamily">
-                                    <option value="Inter">Inter</option>
-                                    <option value="Arial">Arial</option>
-                                </select>
-                            </div>
-                            <div class="control-group">
-                                <label>Size:</label>
-                                <input type="number" id="fontSize" value="24">
-                            </div>
-                            <div class="control-group">
-                                <label>Color:</label>
-                                <input type="color" id="textColor" value="#ffffff">
-                            </div>
-                            <div class="control-group">
-                                <label>Position:</label>
-                                <select id="position">
-                                    <option value="bottom_center">Bottom Center</option>
-                                    <option value="top_center">Top Center</option>
-                                    <option value="middle_center">Middle Center</option>
-                                </select>
-                            </div>
-                        </div>
+                        <span class="progress-text">Processing...</span>
                     </div>
                 </div>
             </section>
 
-            <!-- Step 3: Export -->
-            <section class="export-section" id="exportSection" style="display: none;">
-                <h2>3. Export Video</h2>
-                <button id="exportButton" class="export-btn">Export Video</button>
-                <div id="exportProgress" class="export-progress" style="display: none;">
-                    <div class="progress-bar">
-                        <div class="progress-bar-fill"></div>
-                    </div>
-                    <span class="progress-text">Exporting...</span>
-                </div>
-            </section>
-
-            <!-- Output Section -->
             <section class="output-section">
                 <h2>Processed Videos</h2>
                 <div class="video-grid">
