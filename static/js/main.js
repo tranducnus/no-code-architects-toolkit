@@ -1,6 +1,16 @@
 let selectedVideo = null;
 let currentTranscript = null;
 
+function selectVideo(videoName) {
+    selectedVideo = videoName;
+    const previewVideo = document.getElementById('previewVideo');
+    previewVideo.src = `/static/uploaded/${videoName}`;
+    showSection('editorSection');
+    // Reset transcription state
+    document.getElementById('transcriptText').value = '';
+    document.getElementById('previewCaptions').disabled = true;
+}
+
 // Handle file upload
 async function handleFileUpload(file) {
     const formData = new FormData();
