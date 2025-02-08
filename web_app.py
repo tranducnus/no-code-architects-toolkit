@@ -97,9 +97,15 @@ def process_video(job_id, video_path, form_data):
         if output_type == 'srt':
             from services.transcription import process_transcription
             srt_output = process_transcription(video_path, 'srt')
+            # Copy SRT file to transcripted directory
+            srt_filename = f"{job_id}.srt"
+            transcript_path = os.path.join('transcripted', srt_filename)
+            import shutil
+            shutil.copy2(srt_output, transcript_path)
             JOBS[job_id] = {
                 'status': 'completed',
-                'transcript': srt_output
+                'transcript': srt_output,
+                'srt_path': f'/transcripted/{srt_filename}'
             }
             return
 
