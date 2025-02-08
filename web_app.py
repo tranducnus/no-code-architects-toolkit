@@ -78,10 +78,30 @@ def status(job_id):
         return jsonify({'error': 'Job not found'}), 404
     return jsonify(JOBS[job_id])
 
+@app.route('/status/<job_id>/transcript')
+def get_transcript(job_id):
+    if job_id not in JOBS:
+        return jsonify({'error': 'Job not found'}), 404
+    job_data = JOBS[job_id]
+    if 'transcript' not in job_data:
+        return jsonify({'error': 'No transcript available'}), 404
+    return job_data['transcript']
+
 def process_video(job_id, video_path, form_data):
     try:
         if not os.path.exists(video_path):
             raise FileNotFoundError("Upload file not found")
+            
+        output_type = form_data.get('output_type', 'video')
+        
+        if output_type == 'srt':
+            from services.transcription import process_transcription
+            srt_output = process_transcription(video_path, 'srt')
+            JOBS[job_id] = {
+                'status': 'completed',
+                'transcript': srt_output
+            }
+            return
 
         settings = {
             'font_family': form_data.get('font_family', 'Arial'),
