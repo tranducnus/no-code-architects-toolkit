@@ -1,58 +1,130 @@
+
 let selectedVideo = null;
+let currentTranscript = null;
+
+// Navigation between sections
+function showSection(sectionId) {
+    ['uploadSection', 'editorSection', 'exportSection'].forEach(id => {
+        document.getElementById(id).style.display = id === sectionId ? 'block' : 'none';
+    });
+}
 
 function selectVideo(videoName, card) {
     document.querySelectorAll('.video-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     selectedVideo = videoName;
-    document.getElementById('processButton').disabled = false;
+    
+    // Update preview video source
+    const previewVideo = document.getElementById('previewVideo');
+    previewVideo.src = `/static/uploaded/${videoName}`;
+    
+    // Move to editor section
+    showSection('editorSection');
 }
 
-function addVideoToGrid(videoName) {
-    const grid = document.querySelector('.existing-videos .video-grid');
-    const videoCard = document.createElement('div');
-    videoCard.className = 'video-card';
-    videoCard.dataset.video = videoName;
+async function generateTranscript() {
+    if (!selectedVideo) return;
+    
+    try {
+        const response = await fetch('/generate-transcription', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                video: selectedVideo
+            })
+        });
 
-    videoCard.innerHTML = `
-        <video class="video-preview">
-            <source src="/static/uploaded/${videoName}" type="video/mp4">
-        </video>
-        <div class="video-info">
-            <span class="video-name">${videoName}</span>
-            <button class="select-btn">Select</button>
-        </div>
-    `;
-
-    videoCard.querySelector('.select-btn').addEventListener('click', () => {
-        selectVideo(videoName, videoCard);
-    });
-
-    grid.appendChild(videoCard);
+        if (!response.ok) throw new Error('Transcription failed');
+        
+        const data = await response.json();
+        currentTranscript = data.transcript;
+        document.getElementById('transcriptText').value = currentTranscript;
+    } catch (error) {
+        console.error('Transcription error:', error);
+        alert('Failed to generate transcript: ' + error.message);
+    }
 }
 
-function addProcessedVideo(videoPath) {
-    const grid = document.querySelector('.output-section .video-grid');
-    const videoCard = document.createElement('div');
-    videoCard.className = 'video-card';
+async function previewCaptions() {
+    if (!selectedVideo || !currentTranscript) return;
 
-    videoCard.innerHTML = `
-        <video class="video-preview" controls>
-            <source src="${videoPath}" type="video/mp4">
-        </video>
-        <div class="video-info">
-            <span class="video-name">${videoPath.split('/').pop()}</span>
-            <a href="${videoPath}" download class="download-btn">Download</a>
-        </div>
-    `;
+    const settings = {
+        font_family: document.getElementById('fontFamily').value,
+        font_size: parseInt(document.getElementById('fontSize').value),
+        style: document.getElementById('captionStyle').value,
+        line_color: document.getElementById('textColor').value,
+        position: document.getElementById('position').value
+    };
 
-    grid.appendChild(videoCard);
+    try {
+        const response = await fetch('/preview-captions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                video: selectedVideo,
+                transcript: document.getElementById('transcriptText').value,
+                settings: settings
+            })
+        });
+
+        if (!response.ok) throw new Error('Preview failed');
+        
+        const data = await response.json();
+        document.getElementById('previewVideo').src = data.preview_url;
+    } catch (error) {
+        console.error('Preview error:', error);
+        alert('Failed to preview: ' + error.message);
+    }
 }
 
+async function exportVideo() {
+    if (!selectedVideo || !currentTranscript) return;
+    
+    const exportProgress = document.getElementById('exportProgress');
+    exportProgress.style.display = 'block';
+    
+    try {
+        const response = await fetch('/export-video', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                video: selectedVideo,
+                transcript: document.getElementById('transcriptText').value,
+                settings: {
+                    font_family: document.getElementById('fontFamily').value,
+                    font_size: parseInt(document.getElementById('fontSize').value),
+                    style: document.getElementById('captionStyle').value,
+                    line_color: document.getElementById('textColor').value,
+                    position: document.getElementById('position').value
+                }
+            })
+        });
+
+        if (!response.ok) throw new Error('Export failed');
+        
+        const data = await response.json();
+        addProcessedVideo(data.url);
+        showSection('uploadSection');
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Failed to export: ' + error.message);
+    } finally {
+        exportProgress.style.display = 'none';
+    }
+}
+
+// Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
     const dropzone = document.getElementById('dropzone');
     const videoInput = document.getElementById('videoInput');
-    const processButton = document.getElementById('processButton');
-    const processingProgress = document.getElementById('processingProgress');
+    const generateTranscriptBtn = document.getElementById('generateTranscript');
+    const exportButton = document.getElementById('exportButton');
 
     // Initialize existing videos
     document.querySelectorAll('.video-card').forEach(card => {
@@ -82,112 +154,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    dropzone.addEventListener('click', () => {
-        videoInput.click();
+    generateTranscriptBtn.addEventListener('click', generateTranscript);
+    exportButton.addEventListener('click', exportVideo);
+
+    // Preview updates when settings change
+    ['fontFamily', 'fontSize', 'textColor', 'position', 'captionStyle'].forEach(id => {
+        document.getElementById(id).addEventListener('change', previewCaptions);
     });
-
-    videoInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            handleFileUpload(e.target.files[0]);
-        }
-    });
-
-    async function handleFileUpload(file) {
-        const formData = new FormData();
-        formData.append('video', file);
-
-        try {
-            const response = await fetch('/upload_only', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data.success) {
-                addVideoToGrid(data.video_path);
-            } else {
-                throw new Error(data.error || 'Upload failed');
-            }
-        } catch (error) {
-            console.error('Upload error:', error);
-            alert('Upload failed: ' + error.message);
-        }
-    }
-
-    processButton.addEventListener('click', async () => {
-        if (!selectedVideo) return;
-
-        processButton.disabled = true;
-        processingProgress.style.display = 'block';
-        const progressBar = processingProgress.querySelector('.progress-bar-fill');
-
-        try {
-            const formData = new FormData();
-            formData.append('video', selectedVideo);
-
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            if (data.job_id) {
-                await checkStatus(data.job_id, progressBar);
-            } else {
-                throw new Error(data.error || 'Processing failed');
-            }
-        } catch (error) {
-            console.error('Processing error:', error);
-            alert('Processing failed: ' + error.message);
-            processButton.disabled = false;
-            processingProgress.style.display = 'none';
-        }
-    });
+    document.getElementById('transcriptText').addEventListener('input', previewCaptions);
 });
 
-async function checkStatus(jobId, progressBar) {
-    let progress = 0;
-    const processingProgress = document.getElementById('processingProgress');
-    const processingInterval = setInterval(() => {
-        progress += 2;
-        if (progress <= 95 && progressBar) {
-            progressBar.style.width = `${progress}%`;
-        }
-    }, 500);
+function addProcessedVideo(videoPath) {
+    const grid = document.querySelector('.output-section .video-grid');
+    const videoCard = document.createElement('div');
+    videoCard.className = 'video-card';
 
-    try {
-        while (true) {
-            const response = await fetch(`/status/${jobId}`);
-            const data = await response.json();
+    videoCard.innerHTML = `
+        <video class="video-preview" controls>
+            <source src="${videoPath}" type="video/mp4">
+        </video>
+        <div class="video-info">
+            <span class="video-name">${videoPath.split('/').pop()}</span>
+            <a href="${videoPath}" download class="download-btn">Download</a>
+        </div>
+    `;
 
-            if (data.status === 'completed') {
-                clearInterval(processingInterval);
-                if (progressBar) progressBar.style.width = '100%';
-
-                if (data.url) {
-                    addProcessedVideo(data.url);
-                }
-
-                if (processingProgress) processingProgress.style.display = 'none';
-                document.getElementById('processButton').disabled = false;
-                break;
-            } else if (data.status === 'failed') {
-                throw new Error(data.error || 'Processing failed');
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-    } catch (error) {
-        clearInterval(processingInterval);
-        if (processingProgress) processingProgress.style.display = 'none';
-        document.getElementById('processButton').disabled = false;
-        alert('Processing failed: ' + error.message);
-    }
+    grid.appendChild(videoCard);
 }
