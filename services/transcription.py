@@ -167,38 +167,25 @@ def extract_srt_portion(transcription_text):
     Returns:
         str: Extracted SRT content
     """
-    lines = transcription_text.split('\n')
-    segments = []
-    current_segment = None
+    import re
     
-    for line in lines:
-        # Look for timestamp pattern [00:00.000 --> 00:05.720]
-        timestamp_match = re.match(r'\[(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})\]', line)
-        if timestamp_match:
-            if current_segment:
-                segments.append(current_segment)
-            start_time, end_time = timestamp_match.groups()
-            # Convert timestamp format from [MM:SS.mmm] to [HH:MM:SS,mmm]
-            start_time = '00:' + start_time.replace('.', ',')
-            end_time = '00:' + end_time.replace('.', ',')
-            current_segment = {
-                'timestamp': f"{start_time} --> {end_time}",
-                'text': []
-            }
-        elif current_segment and line.strip():
-            current_segment['text'].append(line.strip())
+    # Regular expression to match timestamp lines
+    timestamp_pattern = r'\[(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})\](.*?)(?=\[\d{2}:\d{2}\.\d{3} -->|\Z)'
     
-    # Add the last segment if exists
-    if current_segment:
-        segments.append(current_segment)
+    # Find all matches in the text
+    matches = re.finditer(timestamp_pattern, transcription_text, re.DOTALL)
     
-    # Format as SRT
     srt_parts = []
-    for i, segment in enumerate(segments, 1):
+    for i, match in enumerate(matches, 1):
+        start_time = '00:' + match.group(1).replace('.', ',')
+        end_time = '00:' + match.group(2).replace('.', ',')
+        text = match.group(3).strip()
+        
+        # Format as SRT entry
         srt_parts.extend([
             str(i),
-            segment['timestamp'],
-            ' '.join(segment['text']),
+            f"{start_time} --> {end_time}",
+            text,
             ''
         ])
     
