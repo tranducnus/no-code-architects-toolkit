@@ -91,45 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset transcription state
     document.getElementById('transcriptText').value = '';
     document.getElementById('previewBtn').disabled = true;
-
-    // Set up transcript generation button
-    const generateTranscriptBtn = document.getElementById('generateTranscript');
-    if (generateTranscriptBtn) {
-        generateTranscriptBtn.addEventListener('click', async () => {
-            if (!selectedVideo) {
-                alert('Please select a video first');
-                return;
-            }
-
-            generateTranscriptBtn.disabled = true;
-            try {
-                const formData = new FormData();
-                formData.append('media_url', `/static/uploaded/${selectedVideo}`);
-
-                const response = await fetch('/transcribe-media', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                // Display the SRT content in the transcript box
-                const transcriptBox = document.getElementById('transcriptText');
-                if (transcriptBox) {
-                    transcriptBox.value = data.transcript;
-                }
-
-            } catch (error) {
-                console.error('Transcription error:', error);
-                alert('Transcription failed: ' + error.message);
-            } finally {
-                generateTranscriptBtn.disabled = false;
-            }
-        });
-    }
 }
 
 function showSection(sectionId) {
