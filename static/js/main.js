@@ -195,17 +195,14 @@ function showSection(sectionId) {
         progressBar.style.width = '0%';
         
         try {
-            const response = await fetch('/v1/media/transcribe', {
+            const response = await fetch('/v1/media/generate-srt', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     media_url: `/static/uploaded/${selectedVideo}`,
-                    include_text: false,
-                    include_srt: true,
-                    include_segments: false,
-                    response_type: 'direct'
+                    language: 'auto'
                 })
             });
             
@@ -214,9 +211,9 @@ function showSection(sectionId) {
             }
 
             const data = await response.json();
-            if (data.srt) {
+            if (data.result) {
                 // Create blob and download link
-                const blob = new Blob([data.srt], { type: 'text/srt' });
+                const blob = new Blob([data.result], { type: 'text/srt' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
