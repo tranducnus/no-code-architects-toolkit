@@ -44,16 +44,21 @@ def transcribe(job_id, data):
     logger.info(f"Job {job_id}: Received transcription request for {media_url}")
 
     try:
-        result = process_transcribe_media(media_url, task, include_text, include_srt, include_segments, word_timestamps, response_type, language, job_id)
+        text, srt_content, segments = process_transcribe_media(media_url, task, include_text, include_srt, include_segments, word_timestamps, "direct", language, job_id)
         logger.info(f"Job {job_id}: Transcription process completed successfully")
+
+        if include_srt:
+            srt_filename = os.path.join(STORAGE_PATH, f"{job_id}.srt")
+            with open(srt_filename, 'w', encoding='utf-8') as f:
+                f.write(srt_content)
 
         # If the result is a file path, upload it using the unified upload_file() method
         if response_type == "direct":
-           
+
             result_json = {
-                "text": result[0],
-                "srt": result[1],
-                "segments": result[2]
+                "text": text,
+                "srt": srt_content if include_srt else None,
+                "segments": segments
             }
 
             return result_json, "/v1/transcribe/media", 200
@@ -61,20 +66,20 @@ def transcribe(job_id, data):
         else:
 
             cloud_urls = {
-                "text": upload_file(result[0]) if include_text is True else None,
-                "srt": upload_file(result[1]) if include_srt is True else None,
-                "segments": upload_file(result[2]) if include_segments is True else None,
+                "text": upload_file(text) if include_text is True else None,
+                "srt": upload_file(srt_filename) if include_srt is True else None,
+                "segments": upload_file(segments) if include_segments is True else None,
             }
 
             if include_text is True:
-                os.remove(result[0])  # Remove the temporary file after uploading
-            
+                os.remove(text)  # Remove the temporary file after uploading
+
             if include_srt is True:
-                os.remove(result[1])
+                os.remove(srt_filename)
 
             if include_segments is True:
-                os.remove(result[2])
-            
+                os.remove(segments)
+
             return cloud_urls, "/v1/transcribe/media", 200
 
     except Exception as e:
