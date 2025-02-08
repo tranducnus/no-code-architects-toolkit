@@ -236,7 +236,9 @@ function showSection(sectionId) {
             }
         } catch (error) {
             console.error('Transcription error:', error);
-            transcriptText.value = 'Error generating transcript';
+            const errorMessage = error.response ? await error.response.text() : error.message;
+            console.error('Detailed error:', errorMessage);
+            transcriptText.value = `Error generating transcript: ${errorMessage}`;
         } finally {
             if (processingInterval) {
                 clearInterval(processingInterval);

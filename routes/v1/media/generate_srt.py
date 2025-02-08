@@ -72,12 +72,23 @@ def generate_srt(job_id, data):
     logger.info(f"Job {job_id}: Received SRT generation request for {media_url}")
 
     try:
+        if not media_url:
+            raise ValueError("No media URL provided")
+            
+        logger.info(f"Job {job_id}: Processing media from {media_url}")
         result = process_transcription(media_url, output_type='srt', language=language)
+        
+        if not result or not os.path.exists(result):
+            raise FileNotFoundError("Generated SRT file not found")
+            
         logger.info(f"Job {job_id}: SRT generation completed successfully")
 
         # Read the generated SRT content
         with open(result, 'r') as f:
             srt_content = f.read()
+            
+        if not srt_content:
+            raise ValueError("Generated SRT content is empty")
             
         return jsonify({
             "job_id": job_id,
@@ -86,8 +97,10 @@ def generate_srt(job_id, data):
         }), 200
 
     except Exception as e:
-        logger.error(f"Job {job_id}: Error during SRT generation - {str(e)}")
+        error_msg = f"Job {job_id}: Error during SRT generation - {str(e)}"
+        logger.error(error_msg)
         return jsonify({
             "error": str(e),
-            "status": "failed"
+            "status": "failed",
+            "details": error_msg
         }), 500
