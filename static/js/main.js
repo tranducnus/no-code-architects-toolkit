@@ -1,3 +1,13 @@
+
+function formatTime(seconds) {
+    const pad = (num) => num.toString().padStart(2, '0');
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
+    return `${pad(hours)}:${pad(minutes)}:${pad(secs)}.${ms.toString().padStart(3, '0')}`;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const dropzone = document.getElementById('dropzone');
     const videoInput = document.getElementById('videoInput');
@@ -199,7 +209,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     media_url: `/static/uploaded/${selectedVideo}`,
-                    output: 'transcript'
+                    task: 'transcribe',
+                    include_text: true,
+                    include_segments: true
                 })
             });
 
@@ -207,8 +219,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const result = await response.text();
-            transcriptText.value = result;
+            const result = await response.json();
+            transcriptText.value = result.segments.map(segment => 
+                `[${formatTime(segment.start)} --> ${formatTime(segment.end)}] ${segment.text}`
+            ).join('\n');
         } catch (error) {
             console.error('Transcription error:', error);
             transcriptText.value = 'Error generating transcript';
