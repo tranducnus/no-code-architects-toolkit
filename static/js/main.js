@@ -195,13 +195,17 @@ function showSection(sectionId) {
         progressBar.style.width = '0%';
         
         try {
-            const response = await fetch('/v1/media/generate-srt', {
+            const response = await fetch('/v1/media/transcribe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                    include_text: false,
+                    include_srt: true,
+                    include_segments: false,
+                    response_type: 'direct'
                 })
             });
             
@@ -229,13 +233,9 @@ function showSection(sectionId) {
             }
         } catch (error) {
             console.error('Transcription error:', error);
-            const errorMessage = error.response ? await error.response.text() : error.message;
-            console.error('Detailed error:', errorMessage);
-            transcriptText.value = `Error generating transcript: ${errorMessage}`;
+            alert('Error generating SRT. Please try again.');
+            transcriptText.value = '';
         } finally {
-            if (processingInterval) {
-                clearInterval(processingInterval);
-            }
             generateTranscriptBtn.disabled = false;
             processingProgress.style.display = 'none';
         }
