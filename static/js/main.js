@@ -272,13 +272,15 @@ document.addEventListener('DOMContentLoaded', function() {
         processingProgress.style.display = 'block';
 
         try {
-            const formData = new FormData();
-            formData.append('video_path', `/static/uploaded/${selectedVideo}`);
-            formData.append('generate_only_subtitles', 'true');
-
             const response = await fetch('/v1/media/generate-srt', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                    generate_only_subtitles: true
+                })
             });
 
             if (!response.ok) {
@@ -286,9 +288,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const result = await response.json();
-
-            // Display both SRT and ASS content
             let displayContent = '';
+            
             if (result.srt) {
                 displayContent += '=== SRT Content ===\n' + result.srt + '\n\n';
             }
@@ -298,16 +299,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             transcriptText.value = displayContent || 'No subtitle content generated';
 
-            // Enable download buttons if content is available
-            if (result.srt || result.ass) {
+            if (displayContent) {
                 const blob = new Blob([displayContent], { type: 'text/plain' });
                 const downloadUrl = URL.createObjectURL(blob);
-
                 const downloadLink = document.createElement('a');
                 downloadLink.href = downloadUrl;
                 downloadLink.download = 'subtitles.txt';
                 downloadLink.click();
-
                 URL.revokeObjectURL(downloadUrl);
             }
         } catch (error) {
