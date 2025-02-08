@@ -3,17 +3,15 @@
 <head>
     <title>Video Captioning</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-container">
         <div class="sidebar">
-            <h2 class="section-title">Caption Settings</h2>
+            <h2>Caption Settings</h2>
             <div class="caption-editor">
                 <div class="editor-section">
                     <h3>Font</h3>
                     <select id="fontFamily" class="style-input">
-                        <option value="Inter">Inter</option>
                         <option value="Arial">Arial</option>
                         <option value="ComicNeue">Comic Neue</option>
                         <option value="DejaVuSans">DejaVu Sans</option>
@@ -22,7 +20,7 @@
                 </div>
 
                 <div class="editor-section">
-                    <h3>Font Size</h3>
+                    <h3>Size</h3>
                     <input type="range" id="fontSize" min="12" max="72" value="24" class="style-input">
                     <span id="fontSizeDisplay">24px</span>
                 </div>
@@ -32,12 +30,47 @@
                     <div class="color-inputs">
                         <div class="color-input">
                             <label>Text</label>
-                            <input type="color" id="textColor" value="#FFFFFF">
+                            <input type="color" id="textColor" value="#FFFFFF" class="style-input">
                         </div>
                         <div class="color-input">
                             <label>Background</label>
-                            <input type="color" id="bgColor" value="#000000">
+                            <input type="color" id="bgColor" value="#000000" class="style-input">
                         </div>
+                    </div>
+                </div>
+
+                <div class="editor-section">
+                    <h3>Style</h3>
+                    <select id="captionStyle" class="style-input">
+                        <option value="classic">Classic</option>
+                        <option value="karaoke">Karaoke</option>
+                        <option value="highlight">Highlight</option>
+                        <option value="word_by_word">Word by Word</option>
+                    </select>
+                </div>
+
+                <div class="editor-section">
+                    <h3>Position</h3>
+                    <select id="position" class="style-input" onchange="updateCaptionPreview()">
+                        <option value="bottom_center">Bottom</option>
+                        <option value="middle_center">Middle</option>
+                        <option value="top_center">Top</option>
+                    </select>
+                </div>
+
+                <div class="editor-section">
+                    <h3>Alignment</h3>
+                    <select id="alignment" class="style-input" onchange="updateCaptionPreview()">
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                    </select>
+                </div>
+
+                <div class="editor-section">
+                    <h3>Timing Adjustment</h3>
+                    <div id="timingControls" class="timing-controls">
+                        <!-- Timing controls will be populated dynamically -->
                     </div>
                 </div>
 
@@ -46,59 +79,48 @@
                     <textarea id="captionText" class="style-input" rows="4" placeholder="Enter your captions here..."></textarea>
                 </div>
 
-                <button id="processVideo" class="primary-button">Process Video</button>
+                <div class="editor-section">
+                    <button id="applyStyles" class="primary-button">Apply Styles</button>
+                    <button id="processVideo" class="primary-button">Process Video</button>
+                </div>
             </div>
         </div>
 
         <div class="main-content">
-            <div class="video-section">
-                <h2 class="section-title">Upload Video</h2>
-                <div class="upload-area">
-                    <label class="upload-label">
-                        <input type="file" name="video" accept="video/*" id="videoUpload">
-                        <span>Click to upload or drag and drop</span>
-                    </label>
+            <div class="video-preview">
+                <div id="uploadSection">
+                    <h2>Upload Video</h2>
+                    <form id="uploadForm">
+                        <input type="file" name="video" accept="video/*">
+                        <button type="submit">Upload New Video</button>
+                    </form>
+                    
+                    <h3>Or Select Existing Video</h3>
+                    <select id="existingVideos" class="style-input">
+                        <option value="">Select a video</option>
+                        {% for video in uploaded_videos %}
+                            <option value="{{ video }}">{{ video }}</option>
+                        {% endfor %}
+                    </select>
+                    <button id="selectExisting" class="primary-button">Use Selected Video</button>
                 </div>
 
-                <h2 class="section-title">Existing Videos</h2>
-                <div class="video-grid">
-                    {% for video in uploaded_videos %}
-                    <div class="video-thumbnail">
-                        <video src="/static/uploaded/{{ video }}" preload="metadata"></video>
-                        <div class="video-name">{{ video }}</div>
+                <div id="previewContainer" style="display: none;">
+                    <video id="videoPreview" controls>
+                        Your browser does not support the video tag.
+                    </video>
+                    <div id="captionPreview"></div>
+                    <input type="hidden" id="video_path" name="video_path">
+                </div>
+
+                <div id="processingProgress" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <div class="status-message">Processing video...</div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill"></div>
                     </div>
-                    {% endfor %}
                 </div>
             </div>
-
-            <div id="previewContainer" class="video-section" style="display: none;">
-                <h2 class="section-title">Video Preview</h2>
-                <video id="videoPreview" controls>
-                    Your browser does not support the video tag.
-                </video>
-                <div id="captionPreview"></div>
-                <input type="hidden" id="video_path" name="video_path">
-            </div>
-
-            <div id="processedVideosSection" class="video-section">
-                <h2 class="section-title">Processed Videos</h2>
-                <div class="video-grid">
-                    {% for video in processed_videos %}
-                    <div class="video-thumbnail">
-                        <video src="/static/processed/{{ video }}" controls></video>
-                        <div class="video-name">{{ video }}</div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="processingProgress" class="loading" style="display: none;">
-        <div class="spinner"></div>
-        <div class="status-message">Processing video...</div>
-        <div class="progress-bar">
-            <div class="progress-bar-fill"></div>
         </div>
     </div>
 

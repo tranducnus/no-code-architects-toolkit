@@ -1,107 +1,123 @@
-
 document.addEventListener('DOMContentLoaded', function() {
-    const uploadArea = document.querySelector('.upload-area');
-    const videoUpload = document.getElementById('videoUpload');
+    const uploadForm = document.getElementById('uploadForm');
     const previewContainer = document.getElementById('previewContainer');
+    const uploadSection = document.getElementById('uploadSection');
     const videoPreview = document.getElementById('videoPreview');
     const captionPreview = document.getElementById('captionPreview');
     const errorMessage = document.getElementById('errorMessage');
+
+    // Style inputs
+    const fontFamily = document.getElementById('fontFamily');
+    const fontSize = document.getElementById('fontSize');
+    const fontSizeDisplay = document.getElementById('fontSizeDisplay');
+    const textColor = document.getElementById('textColor');
+    const bgColor = document.getElementById('bgColor');
+    const captionStyle = document.getElementById('captionStyle');
+    const captionText = document.getElementById('captionText');
     const processVideo = document.getElementById('processVideo');
 
-    // Drag and drop handling
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.style.borderColor = '#4CAF50';
-    });
-
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.style.borderColor = '#ddd';
-    });
-
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.style.borderColor = '#ddd';
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('video/')) {
-            handleFileUpload(file);
-        }
-    });
-
-    videoUpload.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            handleFileUpload(file);
-        }
-    });
-
-    // Video thumbnail click handling
-    document.querySelectorAll('.video-thumbnail').forEach(thumbnail => {
-        thumbnail.addEventListener('click', () => {
-            const videoSrc = thumbnail.querySelector('video').src;
-            const videoName = thumbnail.querySelector('.video-name').textContent;
-            previewContainer.style.display = 'block';
-            videoPreview.src = videoSrc;
-            document.getElementById('video_path').value = videoName;
-        });
-    });
-
-    async function handleFileUpload(file) {
-        const formData = new FormData();
-        formData.append('video', file);
-
-        try {
-            errorMessage.textContent = '';
-            const response = await fetch('/upload_only', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
+    // Handle existing video selection
+    const existingVideos = document.getElementById('existingVideos');
+    const selectExisting = document.getElementById('selectExisting');
+    
+    if (selectExisting) {
+        selectExisting.addEventListener('click', () => {
+            const selectedVideo = existingVideos.value;
+            if (selectedVideo) {
+                uploadSection.style.display = 'none';
                 previewContainer.style.display = 'block';
-                videoPreview.src = `/static/uploaded/${data.video_path}`;
-                document.getElementById('video_path').value = data.video_path;
-                location.reload(); // Refresh to show new thumbnail
+                videoPreview.src = `/static/uploaded/${selectedVideo}`;
+                document.getElementById('video_path').value = selectedVideo;
             } else {
-                throw new Error(data.error || 'Upload failed');
+                errorMessage.textContent = 'Please select a video';
             }
-        } catch (error) {
-            errorMessage.textContent = `Error: ${error.message}`;
-        }
+        });
     }
 
-    // Caption preview updates
+    // Handle file upload
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMessage.textContent = '';
+
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch('/upload_only', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    uploadSection.style.display = 'none';
+                    previewContainer.style.display = 'block';
+                    if (videoPreview) {
+                        videoPreview.src = `/static/uploaded/${data.video_path}`;
+                        document.getElementById('video_path').value = data.video_path;
+                    }
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
+            } catch (error) {
+                errorMessage.textContent = `Error: ${error.message}`;
+            }
+        });
+    }
+
+    // Live preview updates
     function updateCaptionPreview() {
         if (captionPreview) {
-            const fontFamily = document.getElementById('fontFamily').value;
-            const fontSize = document.getElementById('fontSize').value;
-            const textColor = document.getElementById('textColor').value;
-            const bgColor = document.getElementById('bgColor').value;
-            const captionText = document.getElementById('captionText').value;
-
-            captionPreview.style.fontFamily = fontFamily;
-            captionPreview.style.fontSize = `${fontSize}px`;
-            captionPreview.style.color = textColor;
-            captionPreview.style.backgroundColor = bgColor;
-            captionPreview.textContent = captionText;
+            captionPreview.style.fontFamily = fontFamily.value;
+            captionPreview.style.fontSize = `${fontSize.value}px`;
+            captionPreview.style.color = textColor.value;
+            captionPreview.style.backgroundColor = bgColor.value;
+            captionPreview.style.textAlign = document.getElementById('alignment').value;
+            captionPreview.style.position = 'relative';
+            captionPreview.textContent = captionText.value;
+            
+            // Update position
+            const position = document.getElementById('position').value;
+            const positions = {
+                'top': '0',
+                'middle': '50%',
+                'bottom': '100%'
+            };
+            captionPreview.style.top = positions[position.split('_')[0]];
         }
     }
 
-    // Style input event listeners
-    ['fontFamily', 'fontSize', 'textColor', 'bgColor', 'captionText'].forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('input', updateCaptionPreview);
+    // Handle transcript timing adjustments
+    let transcriptTiming = {};
+    
+    function adjustTiming(index, adjustment) {
+        if (!transcriptTiming[index]) {
+            transcriptTiming[index] = 0;
         }
-    });
+        transcriptTiming[index] += adjustment;
+        document.getElementById(`timing-${index}`).textContent = 
+            `${transcriptTiming[index] > 0 ? '+' : ''}${transcriptTiming[index]}s`;
+    }
 
-    // Process video handling
+    // Event listeners for style changes
+    if (fontFamily) fontFamily.addEventListener('change', updateCaptionPreview);
+    if (fontSize) {
+        fontSize.addEventListener('input', () => {
+            if (fontSizeDisplay) fontSizeDisplay.textContent = `${fontSize.value}px`;
+            updateCaptionPreview();
+        });
+    }
+    if (textColor) textColor.addEventListener('input', updateCaptionPreview);
+    if (bgColor) bgColor.addEventListener('input', updateCaptionPreview);
+    if (captionText) captionText.addEventListener('input', updateCaptionPreview);
+
+    // Process video with captions
     if (processVideo) {
         processVideo.addEventListener('click', async () => {
             const videoPath = document.getElementById('video_path')?.value;
             if (!videoPath) {
-                errorMessage.textContent = 'Please upload or select a video first';
+                errorMessage.textContent = 'Please upload a video first';
                 return;
             }
 
@@ -120,11 +136,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const formData = new FormData();
                 formData.append('video', videoPath);
-                formData.append('font_family', document.getElementById('fontFamily').value);
-                formData.append('font_size', document.getElementById('fontSize').value);
-                formData.append('text_color', document.getElementById('textColor').value);
-                formData.append('bg_color', document.getElementById('bgColor').value);
-                formData.append('captions', document.getElementById('captionText').value);
+                formData.append('font_family', fontFamily.value);
+                formData.append('font_size', fontSize.value);
+                formData.append('text_color', textColor.value);
+                formData.append('bg_color', bgColor.value);
+                formData.append('style', captionStyle.value);
+                formData.append('captions', captionText.value);
 
                 const response = await fetch('/upload', {
                     method: 'POST',
@@ -164,9 +181,13 @@ async function checkStatus(jobId, progressBar) {
             if (data.status === 'completed') {
                 clearInterval(processingInterval);
                 if (progressBar) progressBar.style.width = '100%';
-                setTimeout(() => {
-                    location.reload(); // Refresh to show new processed video
-                }, 1000);
+
+                const videoResult = document.getElementById('videoResult');
+                const previewVideo = document.getElementById('previewVideo');
+
+                if (previewVideo) previewVideo.src = data.url;
+                if (videoResult) videoResult.style.display = 'block';
+                if (processingProgress) processingProgress.style.display = 'none';
                 break;
             } else if (data.status === 'failed') {
                 throw new Error(data.error || 'Processing failed');
