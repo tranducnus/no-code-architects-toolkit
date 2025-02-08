@@ -21,16 +21,23 @@ logger = logging.getLogger(__name__)
 })
 def generate_transcript():
     video = request.json['video']
-    video_path = os.path.join('static', 'uploaded', video)
+    video_path = os.path.join(os.getcwd(), 'static', 'uploaded', video)
     
     try:
+        if not os.path.exists(video_path):
+            logger.error(f"Video file not found: {video_path}")
+            return jsonify({"error": "Video file not found"}), 404
+            
         result = generate_transcription(video_path)
+        if not result or not isinstance(result, dict) or 'text' not in result:
+            return jsonify({"error": "Invalid transcription result"}), 500
+            
         return jsonify({
-            "transcript": result['text'] if isinstance(result, dict) else str(result)
+            "transcript": result['text']
         })
     except Exception as e:
-        logger.error(f"Transcription error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Transcription error: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Transcription failed: {str(e)}"}), 500
 
 @v1_video_caption_bp.route('/api/v1/video/preview-captions', methods=['POST'])
 @authenticate

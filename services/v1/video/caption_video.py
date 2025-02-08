@@ -47,19 +47,30 @@ def rgb_to_ass_color(rgb_color):
 
 def generate_transcription(video_path, language='auto'):
     try:
+        if not os.path.exists(video_path):
+            raise FileNotFoundError(f"Video file not found at path: {video_path}")
+            
+        logger.info(f"Loading Whisper model for video: {video_path}")
         model = whisper.load_model("base")
+        
         transcription_options = {
             'word_timestamps': True,
             'verbose': True,
         }
         if language != 'auto':
             transcription_options['language'] = language
+            
+        logger.info(f"Starting transcription with options: {transcription_options}")
         result = model.transcribe(video_path, **transcription_options)
+        
+        if not result or 'text' not in result:
+            raise ValueError("Transcription completed but returned no text")
+            
         logger.info(f"Transcription generated successfully for video: {video_path}")
         return result
     except Exception as e:
-        logger.error(f"Error in transcription: {str(e)}")
-        raise
+        logger.error(f"Error in transcription: {str(e)}", exc_info=True)
+        raise type(e)(f"Transcription failed: {str(e)}")
 
 def get_video_resolution(video_path):
     try:
