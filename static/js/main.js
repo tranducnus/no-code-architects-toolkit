@@ -81,26 +81,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function selectVideo(videoName, card) {
-        document.querySelectorAll('.video-card').forEach(c =>
-            c.classList.remove('selected'));
-        if (card) card.classList.add('selected');
-        selectedVideo = videoName;
-        const previewVideo = document.getElementById('previewVideo');
-        if (previewVideo) {
-            previewVideo.src = `/static/uploaded/${videoName}`;
-        }
-        showSection('editorSection');
-        // Reset transcription state
-        document.getElementById('transcriptText').value = '';
-        document.getElementById('previewBtn').disabled = true;
+    document.querySelectorAll('.video-card').forEach(c =>
+        c.classList.remove('selected'));
+    if (card) card.classList.add('selected');
+    selectedVideo = videoName;
+    const previewVideo = document.getElementById('previewVideo');
+    if (previewVideo) {
+        previewVideo.src = `/static/uploaded/${videoName}`;
     }
+    showSection('editorSection');
+    // Reset transcription state
+    document.getElementById('transcriptText').value = '';
+    document.getElementById('previewBtn').disabled = true;
+}
 
-    function showSection(sectionId) {
-        const section = document.getElementById(sectionId);
-        if (section) {
-            section.style.display = 'block';
-        }
+function showSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.style.display = 'block';
     }
+}
 
     // Process video
     processButton.addEventListener('click', async () => {
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             captionPreview.style.top = positions[position.split('_')[0]];
 
-        }
+    }
     }
 
     // Handle transcript generation
@@ -187,22 +187,24 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Please select a video first');
             return;
         }
-
+        
         generateTranscriptBtn.disabled = true;
         transcriptText.value = 'Generating transcript...';
         processingProgress.style.display = 'block';
         const progressBar = processingProgress.querySelector('.progress-bar-fill');
         progressBar.style.width = '0%';
-
+        
         try {
             const formData = new FormData();
             formData.append('video', selectedVideo);
-
-            const response = await fetch('/upload', {
+            formData.append('output_format', 'srt'); // Can be 'srt' or 'vtt'
+            formData.append('language', 'auto');
+            
+            const response = await fetch('/v1/media/generate-srt', {
                 method: 'POST',
                 body: formData
             });
-
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -210,25 +212,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             if (data.job_id) {
                 await checkStatus(data.job_id, progressBar);
-                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`, {
-                    headers: {
-                        'Accept': 'text/srt'
-                    }
-                });
+                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
                 if (!transcriptResponse.ok) {
                     throw new Error('Failed to fetch transcript');
                 }
                 const transcriptData = await transcriptResponse.text();
-                // Format the response as SRT
-                transcriptText.value = transcriptData
-                    .split('\n')
-                    .filter(line => line.trim() !== '')
-                    .join('\n');
+                transcriptText.value = transcriptData;
+                document.getElementById('previewBtn').disabled = false;
                 progressBar.style.width = '100%';
             }
         } catch (error) {
             console.error('Transcription error:', error);
-            transcriptText.value = 'Error generating transcript';
+            transcriptText.value = 'Error generating transcript. Please try again.';
         } finally {
             if (processingInterval) {
                 clearInterval(processingInterval);
