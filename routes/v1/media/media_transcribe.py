@@ -49,7 +49,10 @@ def transcribe(job_id, data):
 
         # If the result is a file path, upload it using the unified upload_file() method
         if response_type == "direct":
-           
+            # Check if only SRT is requested
+            if include_srt and not include_text and not include_segments:
+                return {"srt": result[1]}, "/v1/transcribe/media", 200
+            
             result_json = {
                 "text": result[0],
                 "srt": result[1],
