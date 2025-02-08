@@ -197,25 +197,17 @@ function showSection(sectionId) {
         try {
             const formData = new FormData();
             formData.append('video', selectedVideo);
-            formData.append('output_format', 'srt'); // Can be 'srt' or 'vtt'
-            formData.append('language', 'auto');
             
-            const response = await fetch('/v1/media/generate-srt', {
+            const response = await fetch('/upload', {
                 method: 'POST',
                 body: formData
             });
             
             if (!response.ok) {
-                const errorData = await response.text();
-                console.error('Server error:', errorData);
-                throw new Error(errorData || `HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const transcriptData = await response.text();
-            transcriptText.value = transcriptData;
-            document.getElementById('previewBtn').disabled = false;
-            progressBar.style.width = '100%';
-            return;
+            const data = await response.json();
             if (data.job_id) {
                 await checkStatus(data.job_id, progressBar);
                 const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
@@ -224,12 +216,11 @@ function showSection(sectionId) {
                 }
                 const transcriptData = await transcriptResponse.text();
                 transcriptText.value = transcriptData;
-                document.getElementById('previewBtn').disabled = false;
                 progressBar.style.width = '100%';
             }
         } catch (error) {
-            console.error('Transcription error:', error.message);
-            transcriptText.value = `Error generating transcript: ${error.message}`;
+            console.error('Transcription error:', error);
+            transcriptText.value = 'Error generating transcript';
         } finally {
             if (processingInterval) {
                 clearInterval(processingInterval);
