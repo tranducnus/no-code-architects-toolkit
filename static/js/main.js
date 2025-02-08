@@ -119,7 +119,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Display the SRT content in the transcript box
                 const transcriptBox = document.getElementById('transcriptText');
                 if (transcriptBox) {
-                    transcriptBox.value = data.transcript;
+                    if (typeof data === 'object' && data.transcript) {
+                        transcriptBox.value = data.transcript;
+                    } else {
+                        transcriptBox.value = data;
+                    }
                 }
 
             } catch (error) {
