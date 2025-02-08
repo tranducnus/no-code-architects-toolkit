@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const dropzone = document.getElementById('dropzone');
     const videoInput = document.getElementById('videoInput');
     const processButton = document.getElementById('processButton');
+    const generateTranscriptBtn = document.getElementById('generateTranscriptBtn');
+    const transcriptText = document.getElementById('transcriptText');
     const processingProgress = document.getElementById('processingProgress');
     const uploadForm = document.getElementById('uploadForm');
     let selectedVideo = null;
@@ -91,49 +93,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset transcription state
     document.getElementById('transcriptText').value = '';
     document.getElementById('previewBtn').disabled = true;
-
-    // Set up transcript generation button
-    const generateTranscriptBtn = document.getElementById('generateTranscript');
-    if (generateTranscriptBtn) {
-        generateTranscriptBtn.addEventListener('click', async () => {
-            if (!selectedVideo) {
-                alert('Please select a video first');
-                return;
-            }
-
-            generateTranscriptBtn.disabled = true;
-            try {
-                const formData = new FormData();
-                formData.append('media_url', `/static/uploaded/${selectedVideo}`);
-
-                const response = await fetch('/transcribe-media', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                // Display the SRT content in the transcript box
-                const transcriptBox = document.getElementById('transcriptText');
-                if (transcriptBox) {
-                    if (typeof data === 'object' && data.transcript) {
-                        transcriptBox.value = data.transcript;
-                    } else {
-                        transcriptBox.value = data;
-                    }
-                }
-
-            } catch (error) {
-                console.error('Transcription error:', error);
-                alert('Transcription failed: ' + error.message);
-            } finally {
-                generateTranscriptBtn.disabled = false;
-            }
-        });
-    }
 }
 
 function showSection(sectionId) {
@@ -218,8 +177,51 @@ function showSection(sectionId) {
                 'bottom': '100%'
             };
             captionPreview.style.top = positions[position.split('_')[0]];
-        }
+
     }
+    }
+
+    // Handle transcript generation
+    generateTranscriptBtn.addEventListener('click', async () => {
+        if (!selectedVideo) {
+            alert('Please select a video first');
+            return;
+        }
+        
+        generateTranscriptBtn.disabled = true;
+        transcriptText.value = 'Generating transcript...';
+        processingProgress.style.display = 'block';
+        const progressBar = processingProgress.querySelector('.progress-bar-fill');
+        progressBar.style.width = '0%';
+        
+        try {
+            const formData = new FormData();
+            formData.append('media_url', `/static/uploaded/${selectedVideo}`);
+            formData.append('output', 'srt');
+            
+            const response = await fetch('/transcribe-media', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.text();
+            transcriptText.value = result;
+            progressBar.style.width = '100%';
+        } catch (error) {
+            console.error('Transcription error:', error);
+            transcriptText.value = 'Error generating transcript';
+        } finally {
+            if (processingInterval) {
+                clearInterval(processingInterval);
+            }
+            generateTranscriptBtn.disabled = false;
+            processingProgress.style.display = 'none';
+        }
+    });
 
     // Event listeners for style changes
     if (fontFamily) fontFamily.addEventListener('change', updateCaptionPreview);
