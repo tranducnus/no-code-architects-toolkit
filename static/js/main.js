@@ -195,47 +195,36 @@ function showSection(sectionId) {
         progressBar.style.width = '0%';
         
         try {
-            const response = await fetch('/v1/media/transcribe', {
+            const formData = new FormData();
+            formData.append('video', selectedVideo);
+            
+            const response = await fetch('/upload', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    media_url: `/static/uploaded/${selectedVideo}`,
-                    include_text: false,
-                    include_srt: true,
-                    include_segments: false,
-                    response_type: 'direct'
-                })
+                body: formData
             });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const result = await response.json();
-            if (result.srt) {
-                transcriptText.value = result.srt;
+            const data = await response.json();
+            if (data.job_id) {
+                await checkStatus(data.job_id, progressBar);
+                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
+                if (!transcriptResponse.ok) {
+                    throw new Error('Failed to fetch transcript');
+                }
+                const transcriptData = await transcriptResponse.text();
+                transcriptText.value = transcriptData;
                 progressBar.style.width = '100%';
-                
-                // Create download link for SRT
-                const blob = new Blob([result.srt], { type: 'text/srt' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${selectedVideo.split('.')[0]}.srt`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            } else {
-                throw new Error('No SRT content generated');
             }
         } catch (error) {
             console.error('Transcription error:', error);
-            alert('Error generating SRT. Please try again.');
-            transcriptText.value = '';
+            transcriptText.value = 'Error generating transcript';
         } finally {
+            if (processingInterval) {
+                clearInterval(processingInterval);
+            }
             generateTranscriptBtn.disabled = false;
             processingProgress.style.display = 'none';
         }

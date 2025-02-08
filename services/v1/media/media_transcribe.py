@@ -16,13 +16,8 @@ STORAGE_PATH = "/tmp/"
 def process_transcribe_media(media_url, task, include_text, include_srt, include_segments, word_timestamps, response_type, language, job_id):
     """Transcribe or translate media and return the transcript/translation, SRT or VTT file path."""
     logger.info(f"Starting {task} for media URL: {media_url}")
-    
-    # Handle local file paths
-    if media_url.startswith('/static/'):
-        input_filename = media_url
-    else:
-        input_filename = download_file(media_url, os.path.join(STORAGE_PATH, 'input_media'))
-    logger.info(f"Using media file: {input_filename}")
+    input_filename = download_file(media_url, os.path.join(STORAGE_PATH, 'input_media'))
+    logger.info(f"Downloaded media to local file: {input_filename}")
 
     try:
         # Load a larger model for better translation quality
