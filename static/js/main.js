@@ -193,6 +193,60 @@ function showSection(sectionId) {
         processingProgress.style.display = 'block';
         const progressBar = processingProgress.querySelector('.progress-bar-fill');
         progressBar.style.width = '0%';
+
+        try {
+            // Generate SRT
+            const srtResponse = await fetch('/v1/media/generate-srt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`
+                })
+            });
+
+            if (!srtResponse.ok) throw new Error('SRT generation failed');
+            const srtContent = await srtResponse.text();
+            
+            // Download SRT file
+            const srtBlob = new Blob([srtContent], { type: 'text/srt' });
+            const srtUrl = URL.createObjectURL(srtBlob);
+            const srtLink = document.createElement('a');
+            srtLink.href = srtUrl;
+            srtLink.download = `${selectedVideo}.srt`;
+            srtLink.click();
+
+            // Generate ASS
+            const assResponse = await fetch('/transcribe-media', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    media_url: `/static/uploaded/${selectedVideo}`,
+                    output: 'ass'
+                })
+            });
+
+            if (!assResponse.ok) throw new Error('ASS generation failed');
+            const assData = await assResponse.json();
+            
+            // Download ASS file
+            const assBlob = new Blob([assData.result], { type: 'text/ass' });
+            const assUrl = URL.createObjectURL(assBlob);
+            const assLink = document.createElement('a');
+            assLink.href = assUrl;
+            assLink.download = `${selectedVideo}.ass`;
+            assLink.click();
+
+        } catch (error) {
+            console.error('Transcription error:', error);
+            alert('Error generating transcripts');
+        } finally {
+            generateTranscriptBtn.disabled = false;
+            processingProgress.style.display = 'none';
+        }
         
         try {
             const formData = new FormData();
