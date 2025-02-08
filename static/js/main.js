@@ -14,8 +14,11 @@ function addVideoToGrid(videoName) {
         </div>
     `;
 
-    videoCard.querySelector('.select-btn').addEventListener('click', () => {
-        selectVideo(videoName, videoCard);
+    videoCard.querySelector('.select-btn').addEventListener('click', function() {
+        document.querySelectorAll('.video-card').forEach(c => c.classList.remove('selected'));
+        this.closest('.video-card').classList.add('selected');
+        selectedVideo = videoName;
+        document.getElementById('processButton').disabled = false;
     });
 
     grid.appendChild(videoCard);
