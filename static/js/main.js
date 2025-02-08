@@ -195,13 +195,15 @@ document.addEventListener('DOMContentLoaded', function() {
         progressBar.style.width = '0%';
 
         try {
+            const videoUrl = window.location.origin + `/static/uploaded/${selectedVideo}`;
             const response = await fetch('/v1/media/generate-srt-video', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    video_url: `/static/uploaded/${selectedVideo}`
+                    video_url: videoUrl,
+                    language: 'auto'
                 })
             });
 
@@ -226,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('SRT Generation error:', error);
-            transcriptText.value = 'Error generating SRT file';
+            transcriptText.value = 'Error generating SRT file: ' + error.message;
         } finally {
             generateTranscriptBtn.disabled = false;
             processingProgress.style.display = 'none';
