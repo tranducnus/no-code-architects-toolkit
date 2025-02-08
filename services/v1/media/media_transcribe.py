@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 # Set the default local storage directory
 STORAGE_PATH = "/tmp/"
 
-def process_transcribe_media(media_url, task, include_text, include_srt, include_segments, word_timestamps, response_type, language, job_id):
+def process_transcribe_media(media_url, task, include_text, include_srt, include_segments, word_timestamps, response_type, language, job_id, srt_only=False):
     """Transcribe or translate media and return the transcript/translation, SRT or VTT file path."""
     logger.info(f"Starting {task} for media URL: {media_url}")
     input_filename = download_file(media_url, os.path.join(STORAGE_PATH, 'input_media'))
@@ -38,7 +38,7 @@ def process_transcribe_media(media_url, task, include_text, include_srt, include
             options["language"] = language
 
         result = model.transcribe(input_filename, **options)
-        
+
         # For translation task, the result['text'] will be in English
         text = None
         srt_text = None
@@ -57,7 +57,7 @@ def process_transcribe_media(media_url, task, include_text, include_srt, include
                 # Use translated text if available, otherwise use transcribed text
                 segment_text = segment['text'].strip()
                 srt_subtitles.append(srt.Subtitle(i, start, end, segment_text))
-            
+
             srt_text = srt.compose(srt_subtitles)
 
         if include_segments is True:
@@ -68,16 +68,25 @@ def process_transcribe_media(media_url, task, include_text, include_srt, include
         logger.info(f"{task.capitalize()} successful, output type: {response_type}")
 
         if response_type == "direct":
-            return text, srt_text, segments_json
+            if srt_only:
+                return result[1] if include_srt else "", "/v1/transcribe/media", 200
+
+            result_json = {
+                "text": text,
+                "srt": srt_text,
+                "segments": segments_json
+            }
+
+            return result_json, "/v1/transcribe/media", 200
         else:
-            
+
             if include_text is True:
                 text_filename = os.path.join(STORAGE_PATH, f"{job_id}.txt")
                 with open(text_filename, 'w') as f:
                     f.write(text)
             else:
                 text_file = None
-            
+
             if include_srt is True:
                 srt_filename = os.path.join(STORAGE_PATH, f"{job_id}.srt")
                 with open(srt_filename, 'w') as f:
