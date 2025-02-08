@@ -190,9 +190,6 @@ function showSection(sectionId) {
         
         generateTranscriptBtn.disabled = true;
         transcriptText.value = 'Generating transcript...';
-        processingProgress.style.display = 'block';
-        const progressBar = processingProgress.querySelector('.progress-bar-fill');
-        progressBar.style.width = '0%';
 
         try {
             // Generate SRT
@@ -215,9 +212,12 @@ function showSection(sectionId) {
             const srtLink = document.createElement('a');
             srtLink.href = srtUrl;
             srtLink.download = `${selectedVideo}.srt`;
+            document.body.appendChild(srtLink);
             srtLink.click();
+            document.body.removeChild(srtLink);
+            URL.revokeObjectURL(srtUrl);
 
-            // Generate ASS
+            // Generate ASS using transcribe-media endpoint
             const assResponse = await fetch('/transcribe-media', {
                 method: 'POST',
                 headers: {
@@ -238,14 +238,18 @@ function showSection(sectionId) {
             const assLink = document.createElement('a');
             assLink.href = assUrl;
             assLink.download = `${selectedVideo}.ass`;
+            document.body.appendChild(assLink);
             assLink.click();
+            document.body.removeChild(assLink);
+            URL.revokeObjectURL(assUrl);
 
+            transcriptText.value = 'Transcripts generated and downloaded successfully!';
         } catch (error) {
             console.error('Transcription error:', error);
+            transcriptText.value = 'Error generating transcripts. Please try again.';
             alert('Error generating transcripts');
         } finally {
             generateTranscriptBtn.disabled = false;
-            processingProgress.style.display = 'none';
         }
         
         try {
