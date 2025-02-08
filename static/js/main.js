@@ -197,21 +197,13 @@ function showSection(sectionId) {
                 formData.append('media_url', `/static/uploaded/${selectedVideo}`);
                 formData.append('output', 'srt');
                 
-                const response = await fetch('/v1/media/generate-srt', {
+                const response = await fetch('/transcribe-media', {
                     method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + getAuthToken()
-                    },
                     body: formData
                 });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                if (data.result) {
-                    transcriptText.value = data.result;
                 }
 
                 const result = await response.text();
