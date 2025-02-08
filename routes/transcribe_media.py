@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 @validate_payload({
     "type": "object",
     "properties": {
-        "media_url": {"type": "string", "format": "uri"},
+        "media_url": {"type": "string"},
         "output": {"type": "string", "enum": ["transcript", "srt", "vtt", "ass"]},
         "webhook_url": {"type": "string", "format": "uri"},
         "max_chars": {"type": "integer"},
@@ -43,7 +43,7 @@ def transcribe(job_id, data):
             os.remove(result)  # Remove the temporary file after uploading
             return cloud_url, "/transcribe-media", 200
         else:
-            return result, "/transcribe-media", 200
+            return {"transcript": result}, 200
         
     except Exception as e:
         logger.error(f"Job {job_id}: Error during transcription process - {str(e)}")
