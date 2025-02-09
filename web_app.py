@@ -105,24 +105,15 @@ def process_video(job_id, video_path, form_data):
 
         if output_type in ['transcript', 'srt', 'vtt', 'ass']:
             from services.transcription import process_transcription
-            output = process_transcription(video_working_copy, output_type)
+            file_paths = process_transcription(video_working_copy)
 
-            # Get appropriate file extension
-            ext = {'transcript': 'txt', 'srt': 'srt', 'vtt': 'vtt', 'ass': 'ass'}[output_type]
-
-            # Copy output file to transcripted directory
-            output_filename = f"{job_id}.{ext}"
-            transcript_path = os.path.join('static', 'transcripted', output_filename)
-
-            # For transcript (plain text), write content directly
-            if output_type == 'transcript':
-                with open(transcript_path, 'w') as f:
-                    f.write(output)
-            else:
-                import shutil
-                os.makedirs(os.path.dirname(transcript_path), exist_ok=True)
-                shutil.copy2(output, transcript_path)
-                os.remove(output)  # Clean up temp file
+            JOBS[job_id] = {
+                'status': 'completed',
+                'transcript': file_paths['plain'],
+                'srt': file_paths['srt'],
+                'vtt': file_paths['vtt'],
+                'ass': file_paths['ass']
+            }
 
             JOBS[job_id] = {
                 'status': 'completed',

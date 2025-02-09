@@ -211,12 +211,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             if (data.job_id) {
                 await checkStatus(data.job_id, progressBar);
-                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
-                if (!transcriptResponse.ok) {
-                    throw new Error('Failed to fetch transcript');
+                const jobResponse = await fetch(`/status/${data.job_id}`);
+                if (!jobResponse.ok) {
+                    throw new Error('Failed to fetch job status');
                 }
-                const transcriptData = await transcriptResponse.text();
-                transcriptText.value = transcriptData;
+                const jobData = await jobResponse.json();
+
+                // Display plain text in textarea
+                const plainTextResponse = await fetch(jobData.transcript);
+                const plainText = await plainTextResponse.text();
+                transcriptText.value = plainText;
+
+                // Add download links for other formats
+                const downloadContainer = document.createElement('div');
+                downloadContainer.className = 'download-links';
+                downloadContainer.innerHTML = `
+                    <h3>Download Transcripts:</h3>
+                    <a href="${jobData.srt}" download>Download SRT</a>
+                    <a href="${jobData.vtt}" download>Download VTT</a>
+                    <a href="${jobData.ass}" download>Download ASS</a>
+                `;
+                transcriptText.parentNode.insertBefore(downloadContainer, transcriptText.nextSibling);
                 progressBar.style.width = '100%';
             }
         } catch (error) {
