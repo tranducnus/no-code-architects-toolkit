@@ -1,0 +1,28 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 384
+PlayResY: 288
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,20,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,2,2,10,10,10,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:05.36,Default,,0,0,0,,I'm Australian and I'm American and today we're gonna
+Dialogue: 0,0:00:00.00,0:00:05.36,Default,,0,0,0,,compare how we say what's a bird's
+Dialogue: 0,0:00:06.16,0:00:08.32,Default,,0,0,0,,trunk that's so weird
+Dialogue: 0,0:00:08.32,0:00:10.32,Default,,0,0,0,,thumbs flip flops
+Dialogue: 0,0:00:13.12,0:00:18.16,Default,,0,0,0,,thong j-string candy lollies but that's like a specific
+Dialogue: 0,0:00:13.12,0:00:18.16,Default,,0,0,0,,type of candy
+Dialogue: 0,0:00:18.16,0:00:25.51,Default,,0,0,0,,no it's not lollies is it lollies? yeah a liquor store?
+Dialogue: 0,0:00:18.16,0:00:25.51,Default,,0,0,0,,a bottle or a bottle or a racer? rubber
+Dialogue: 0,0:00:26.16,0:00:27.51,Default,,0,0,0,,a
+Dialogue: 0,0:00:27.51,0:00:32.00,Default,,0,0,0,,singlet? i tanked up! a dummy pacifier
+Dialogue: 0,0:00:32.00,0:00:35.43,Default,,0,0,0,,oh cut crib? it's like kind of similar
+Dialogue: 0,0:00:35.43,0:00:39.84,Default,,0,0,0,,it's a yuck! see it? blinker a signal to truck it's a
+Dialogue: 0,0:00:35.43,0:00:39.84,Default,,0,0,0,,yut
+Dialogue: 0,0:00:41.28,0:00:43.20,Default,,0,0,0,,a napkin a Soviet
+Dialogue: 0,0:00:43.20,0:00:45.92,Default,,0,0,0,,what? a sidewalk a footpath
+Dialogue: 0,0:00:46.87,0:00:48.87,Default,,0,0,0,,is a path for your feet
