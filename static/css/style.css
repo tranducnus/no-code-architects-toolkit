@@ -1,4 +1,25 @@
 
+.download-links {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+    flex-wrap: wrap;
+}
+
+.download-link {
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.download-link:hover {
+    background-color: #45a049;
+}
+
+
 .format-selector {
     margin-right: 10px;
     display: inline-block;

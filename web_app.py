@@ -105,21 +105,19 @@ def process_video(job_id, video_path, form_data):
 
         if output_type in ['transcript', 'srt', 'vtt', 'ass']:
             from services.transcription import process_transcription
-            formats = ['transcript', 'srt', 'vtt', 'ass']
             outputs = {}
-            
-            # Generate all formats from single transcription
+            formats = ['transcript', 'srt', 'vtt', 'ass']
+            ext_map = {'transcript': 'txt', 'srt': 'srt', 'vtt': 'vtt', 'ass': 'ass'}
+
             for fmt in formats:
                 output = process_transcription(video_working_copy, fmt)
-                ext = {'transcript': 'txt', 'srt': 'srt', 'vtt': 'vtt', 'ass': 'ass'}[fmt]
-                output_filename = f"{job_id}.{ext}"
+                output_filename = f"{job_id}.{ext_map[fmt]}"
                 transcript_path = os.path.join('static', 'transcripted', output_filename)
 
                 if fmt == 'transcript':
                     with open(transcript_path, 'w') as f:
                         f.write(output)
                 else:
-                    import shutil
                     os.makedirs(os.path.dirname(transcript_path), exist_ok=True)
                     shutil.copy2(output, transcript_path)
                     os.remove(output)  # Clean up temp file
