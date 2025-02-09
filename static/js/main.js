@@ -93,9 +93,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reset transcription state
         document.getElementById('transcriptText').value = '';
         document.getElementById('previewBtn').disabled = true;
-        //Remove previous download links
-        const downloadContainer = document.querySelector('.download-links');
-        if(downloadContainer) downloadContainer.remove();
     }
 
     function showSection(sectionId) {
@@ -214,29 +211,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             if (data.job_id) {
                 await checkStatus(data.job_id, progressBar);
-                const statusResponse = await fetch(`/status/${data.job_id}`);
-                if (!statusResponse.ok) {
-                    throw new Error('Failed to fetch transcripts');
+                const transcriptResponse = await fetch(`/status/${data.job_id}/transcript`);
+                if (!transcriptResponse.ok) {
+                    throw new Error('Failed to fetch transcript');
                 }
-                const statusData = await statusResponse.json();
-                if (statusData.transcripts) {
-                    // Show plain text by default
-                    const plainText = await fetch(statusData.transcripts.transcript);
-                    transcriptText.value = await plainText.text();
-
-                    // Create download links for all formats
-                    const downloadContainer = document.createElement('div');
-                    downloadContainer.className = 'download-links';
-                    Object.entries(statusData.transcripts).forEach(([format, path]) => {
-                        const link = document.createElement('a');
-                        link.href = path;
-                        link.download = path.split('/').pop();
-                        link.textContent = `Download ${format.toUpperCase()}`;
-                        link.className = 'download-link';
-                        downloadContainer.appendChild(link);
-                    });
-                    transcriptText.parentNode.insertBefore(downloadContainer, transcriptText.nextSibling);
-                }
+                const transcriptData = await transcriptResponse.text();
+                transcriptText.value = transcriptData;
                 progressBar.style.width = '100%';
             }
         } catch (error) {

@@ -105,28 +105,29 @@ def process_video(job_id, video_path, form_data):
 
         if output_type in ['transcript', 'srt', 'vtt', 'ass']:
             from services.transcription import process_transcription
-            outputs = {}
-            formats = ['transcript', 'srt', 'vtt', 'ass']
-            ext_map = {'transcript': 'txt', 'srt': 'srt', 'vtt': 'vtt', 'ass': 'ass'}
+            output = process_transcription(video_working_copy, output_type)
 
-            for fmt in formats:
-                output = process_transcription(video_working_copy, fmt)
-                output_filename = f"{job_id}.{ext_map[fmt]}"
-                transcript_path = os.path.join('static', 'transcripted', output_filename)
+            # Get appropriate file extension
+            ext = {'transcript': 'txt', 'srt': 'srt', 'vtt': 'vtt', 'ass': 'ass'}[output_type]
 
-                if fmt == 'transcript':
-                    with open(transcript_path, 'w') as f:
-                        f.write(output)
-                else:
-                    os.makedirs(os.path.dirname(transcript_path), exist_ok=True)
-                    shutil.copy2(output, transcript_path)
-                    os.remove(output)  # Clean up temp file
+            # Copy output file to transcripted directory
+            output_filename = f"{job_id}.{ext}"
+            transcript_path = os.path.join('static', 'transcripted', output_filename)
 
-                outputs[fmt] = f'/static/transcripted/{output_filename}'
+            # For transcript (plain text), write content directly
+            if output_type == 'transcript':
+                with open(transcript_path, 'w') as f:
+                    f.write(output)
+            else:
+                import shutil
+                os.makedirs(os.path.dirname(transcript_path), exist_ok=True)
+                shutil.copy2(output, transcript_path)
+                os.remove(output)  # Clean up temp file
 
             JOBS[job_id] = {
                 'status': 'completed',
-                'transcripts': outputs
+                'transcript': f'/static/transcripted/{output_filename}',
+                'format': output_type
             }
             return
 
